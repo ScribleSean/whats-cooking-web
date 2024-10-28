@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 interface Ingredient {
@@ -22,6 +22,7 @@ function App() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [message, setMessage] = useState<string>('Loading...');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const selectedRecipeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch('http://localhost:3000/recipes')
@@ -49,6 +50,12 @@ function App() {
     setSelectedRecipe(prevRecipe => (prevRecipe?.Recipe_ID === recipe.Recipe_ID ? null : recipe)); // Toggle recipe selection
   };
 
+  useEffect(() => {
+    if (selectedRecipe && selectedRecipeRef.current) {
+      selectedRecipeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [selectedRecipe]);
+
   return (
     <div className="App">
       <h1>Recipes</h1>
@@ -67,8 +74,8 @@ function App() {
             ))}
           </ul>
         </div>
-        <div className="recipe-details">
-          {selectedRecipe && (
+        {selectedRecipe && (
+          <div className="recipe-details" ref={selectedRecipeRef}>
             <div className="details-bubble">
               <h2>{selectedRecipe.Recipe_Name}</h2>
               <p><strong>Calories:</strong> {selectedRecipe.Calories !== undefined ? selectedRecipe.Calories : 'N/A'}</p>
@@ -84,12 +91,12 @@ function App() {
                 ))}
               </ul>
               <h4>Directions:</h4>
-              {selectedRecipe.Directions.split('Step').map((step, index) =>
-                step.trim() ? <p key={index}><strong>Step {index}:</strong> {step.trim()}</p> : null
+              {selectedRecipe.Directions.split(/Step \d+:/i).map((step, index) =>
+                step.trim() ? <p key={index}>{step.trim()}</p> : null
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
