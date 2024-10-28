@@ -9,9 +9,9 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "resolveJsonModule": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": false,
     "isolatedModules": true,
     "noEmit": true
   },

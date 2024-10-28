@@ -23,9 +23,3 @@ pool.getConnection()
   });
 
 export default pool;
-
-
-//host: '130.215.10.142',
-//user: 'mynewuser',
-//password: 'mypassword',
-//database: 'CS542ProjectDB',
