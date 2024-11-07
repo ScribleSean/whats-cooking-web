@@ -23,7 +23,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     };
 
     return (
-        <div className="row justify-content-center">
+        <div className="row pt-5 justify-content-center">
             <div className="col max-width">
                 <div className="card">
                     <div className="card-body">
@@ -54,6 +54,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             {error && <p className="text-danger">{error}</p>}
                             <button type="submit" className="btn btn-primary w-100">Login</button>
                         </form>
+                    </div>
+                    <div className="card-footer">
+                        <a href="/registers" className='card-link'>Register here</a>
                     </div>
                 </div>
             </div>
