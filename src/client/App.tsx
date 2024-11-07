@@ -13,15 +13,13 @@ const App: React.FC = () => {
     };
 
     return (
-
-        <div className="App">
+        <div className="container">
             <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
                 <a className="navbar-brand" href="#"> -RecipeApp</a>
             </nav>
-            
-                {isLoggedIn ? <RecipeApp /> : <Login onLogin={handleLogin} />}
-            
+            {isLoggedIn ? <RecipeApp /> : <Login onLogin={handleLogin} />}
         </div>
+                                
     );
 };
 
