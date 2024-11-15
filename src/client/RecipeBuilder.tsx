@@ -55,6 +55,9 @@ const RecipeBuilder: React.FC = () => {
                         {/* User will be able to press this button multiple times, with each press adding a new ingredient */}
                         {/* The add ingrdient button should be 'pushed down' such that all ingredients appear before it  */}
                         {/* <button onClick = {createIngredientDropdown.bind(this)}></button> */}
+                        <h4 className="mt-4">Description</h4>
+                        <input type="text" id="rdescription" name="rdescription" height={400} width={600}></input>
+                        <br></br>
                         <button id="rsubmit" name="rsubmit" value="Submit" onClick={alert.bind(this)} ></button> {/* Change onClick to proper method */}
 
 
