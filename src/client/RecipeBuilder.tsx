@@ -1,0 +1,65 @@
+// RecipeBuilder.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+interface Ingredient {
+    Ingredient_Name: string;
+    Quantity: number;
+    Unit: string;
+}
+
+interface Recipe {
+    Recipe_ID: number;
+    Recipe_Name: string;
+    Prep_Time: number;
+    Cook_Time: number;
+    Servings: number;
+    Calories: number;
+    Ingredients: Ingredient[];
+    Directions: string;
+}
+
+
+
+const RecipeBuilder: React.FC = () => {
+    
+
+    // function createIngredientDropdown(){
+    //     const items = 
+    // };
+
+    return (
+        <div className="container mt-4">
+            <h1 className="text-center mb-4">Recipe Builder</h1>
+            {/* {message && <p className="text-center text-muted">{message}</p>} */}
+            <div className="row">
+                <div className="col-md-4">
+                    <div className="list-group">
+                        <h4 className="mt-4">Recipe Name</h4>
+                        <input type="text" id="rname" name="rname"></input>
+                        <br></br>
+                        <h4 className="mt-4">Prep Time</h4>
+                        <input type="text" id="rptime" name="rptime"></input>
+                        <br></br>
+                        <h4 className="mt-4">Cook Time</h4>
+                        <input type="text" id="rctime" name="rctime"></input>
+                        <br></br>
+                        <h4 className="mt-4">Servings</h4>
+                        <input type="number" id="rservings" name="rservings"></input>
+                        <br></br>
+                        <h4 className="mt-4">Calories</h4>
+                        <input type="number" id="rcalories" name="rcalories"></input>
+                        <br></br>
+                        {/* Have a button to add ingredients... */}
+                        {/* <button onClick = {createIngredientDropdown.bind(this)}></button> */}
+                        <button id="rsubmit" name="rsubmit" value="Submit" onClick={alert.bind(this)} ></button> {/* Change onClick to proper method */}
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default RecipeBuilder;
