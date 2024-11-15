@@ -31,7 +31,6 @@ const RecipeBuilder: React.FC = () => {
     return (
         <div className="container mt-4">
             <h1 className="text-center mb-4">Recipe Builder</h1>
-            {/* {message && <p className="text-center text-muted">{message}</p>} */}
             <div className="row">
                 <div className="col-md-4">
                     <div className="list-group">
@@ -51,6 +50,10 @@ const RecipeBuilder: React.FC = () => {
                         <input type="number" id="rcalories" name="rcalories"></input>
                         <br></br>
                         {/* Have a button to add ingredients... */}
+                        {/* When button is pressed, an alphabetically sorted dropdown containing ingredients & units will appear, and user can input a number for quantity */}
+                        {/* A button should also appear to remove this ingredient */}
+                        {/* User will be able to press this button multiple times, with each press adding a new ingredient */}
+                        {/* The add ingrdient button should be 'pushed down' such that all ingredients appear before it  */}
                         {/* <button onClick = {createIngredientDropdown.bind(this)}></button> */}
                         <button id="rsubmit" name="rsubmit" value="Submit" onClick={alert.bind(this)} ></button> {/* Change onClick to proper method */}
 
