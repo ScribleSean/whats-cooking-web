@@ -5,8 +5,60 @@ import cors from 'cors';
 import pool from './db';
 import path from "path";
 
+
 const app = express();
 app.use(cors())
+
+interface DefaultIngredientName extends RowDataPacket {
+  Ingredient_Name: string;
+}
+
+interface UnitName extends RowDataPacket {
+  Unit: string;
+}
+
+const getIngredientNames = async (): Promise<DefaultIngredientName[]> => {
+  try {
+      const [rows] = await pool.query<DefaultIngredientName[]>("SELECT DISTINCT Ingredient_Name FROM Ingredient ORDER BY Ingredient_Name ASC");
+      return rows as DefaultIngredientName[];
+  } catch (error) {
+      console.error("Error fetching ingredient names:", error);
+      throw error;
+  }
+};
+
+const getUnitNames = async (): Promise<UnitName[]> => {
+  try {
+    const [rows] = await pool.query<UnitName[]>("SELECT DISTINCT Unit FROM Recipe_Content ORDER BY Unit ASC");
+    return rows as UnitName[];
+} catch (error) {
+    console.error("Error fetching ingredient names:", error);
+    throw error;
+}
+};
+
+
+app.get('/default-ingredients', async (req: Request, res: Response) => {
+  try {
+      const ingredientNames = await getIngredientNames();
+      res.status(200).json(ingredientNames.map((row) => row.Ingredient_Name));
+      //console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching ingredient names:', error);
+      res.status(500).json({ error: 'Failed to fetch ingredient names' });
+  }
+});
+
+app.get('/units', async (req: Request, res: Response) => {
+  try {
+      const unitNames = await getUnitNames();
+      res.status(200).json(unitNames.map((row) => row.Unit));
+      //console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching unit names:', error);
+      res.status(500).json({ error: 'Failed to fetch unit names' });
+  }
+});
 
 const constructRecipeUrl = (recipeName: string): string => {
   const formattedName = recipeName.trim().toLowerCase().replace(/\s+/g, '-');
