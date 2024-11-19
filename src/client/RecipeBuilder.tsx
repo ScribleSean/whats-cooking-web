@@ -100,17 +100,34 @@ const RecipeBuilder: React.FC = () => {
     }, [units]);
 
     const addIngredient = () => {
-        setRecipeIngredients([...recipeIngredients, { Ingredient_Name: '', Quantity: 0, Unit: '' }])
+        setRecipeIngredients([...recipeIngredients, {Ingredient_Name: '', Quantity: 0, Unit: '' }])
+        setRecipeSubmit((prevRecipe) => ({
+            ...prevRecipe,
+            Ingredients: [...prevRecipe.Ingredients, {Ingredient_Name: '', Quantity: 0, Unit: ''}], // Add new ingredient to the array
+          }));
     }
 
     const deleteIngredient = (index: number) => {
         setRecipeIngredients(recipeIngredients.filter((_, i) => i !== index))
+        setRecipeSubmit((prevRecipeSubmit) => ({
+            ...prevRecipeSubmit,
+            Ingredients: prevRecipeSubmit.Ingredients.filter((_, i) => i !== index),
+          }));
     }
 
     const handleIngredientChange = (index: number, field: keyof RecipeIngredient, value: string | number) => {
         const updatedIngredients = [...recipeIngredients];
         updatedIngredients[index] = { ...updatedIngredients[index], [field]: value }
         setRecipeIngredients(updatedIngredients);
+        setRecipeSubmit((prevRecipeSubmit) => {
+            const updatedIngredients = [...prevRecipeSubmit.Ingredients];
+            updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
+      
+            return {
+              ...prevRecipeSubmit,
+              Ingredients: updatedIngredients,
+            };
+          });
     }
     
     const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -126,6 +143,7 @@ const RecipeBuilder: React.FC = () => {
       };
 
     const handleSubmit = async () => {
+        console.log(recipeSubmit)
 
         try {
             const response = await fetch('http://localhost:3000/insert-recipe', {
@@ -157,19 +175,19 @@ const RecipeBuilder: React.FC = () => {
                 <div className="col-md-4">
                     <div className="list-group">
                         <h4 className="mt-4">Recipe Name</h4>
-                        <input type="text" id="rname" name="rname" onChange={handleChange}></input>
+                        <input type="text" id="Recipe_Name" name="Recipe_Name" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Prep Time</h4>
-                        <input type="text" id="rptime" name="rptime" onChange={handleChange}></input>
+                        <input type="text" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Cook Time</h4>
-                        <input type="text" id="rctime" name="rctime" onChange={handleChange}></input>
+                        <input type="text" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Servings</h4>
-                        <input type="number" id="rservings" name="rservings" onChange={handleChange}></input>
+                        <input type="number" id="Servings" name="Servings" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Calories</h4>
-                        <input type="number" id="rcalories" name="rcalories" onChange={handleChange}></input>
+                        <input type="number" id="Calories" name="Calories" onChange={handleChange}></input>
                         <br></br>
                         {/* Have a button to add ingredients... */}
                         {/* When button is pressed, an alphabetically sorted dropdown containing ingredients & units will appear, and user can input a number for quantity */}
@@ -228,7 +246,7 @@ const RecipeBuilder: React.FC = () => {
 
                         </div>
                         <h4 className="mt-4">Directions</h4>
-                        <textarea id="rdirections" name="rdirections" style={{ height: '250px' }}  onChange={handleChange}></textarea>
+                        <textarea id="rdirections" name="Directions" style={{ height: '250px' }}  onChange={handleChange}></textarea>
                         <br></br>
 
                         <button
