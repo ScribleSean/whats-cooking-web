@@ -3,7 +3,6 @@ import { RowDataPacket } from 'mysql2'
 import ViteExpress from "vite-express";
 import cors from 'cors';
 import pool from './db';
-import path from "path";
 
 
 const app = express();
@@ -114,6 +113,29 @@ app.get('/recipes', async (req: Request, res: Response) => {
       res.status(500).send('Unknown error fetching recipes');
     }
   }
+});
+
+
+app.post('/insert-recipe', (req, res) => {
+  const { table, data } = req.body;
+
+  if (!table || !data) {
+    return res.status(400).send('Table and data are required');
+  }
+
+  // Construct dynamic SQL query
+  const columns = Object.keys(data).join(', ');
+  const values = Object.values(data).map(value => `'${value}'`).join(', ');
+
+  const sql = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
+
+  // Execute the query
+  pool.query(sql, (err: any, result: any) => {
+    if (err) {
+      return res.status(500).send('Error inserting data');
+    }
+    res.status(200).json({ message: 'Data inserted successfully', result });
+  });
 });
 
 
