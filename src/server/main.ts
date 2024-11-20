@@ -129,6 +129,8 @@ app.post('/insert-recipe', (req, res) => {
 
   const sql = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
 
+  console.log(sql)
+
   // Execute the query
   pool.query(sql, (err: any, result: any) => {
     if (err) {

@@ -152,7 +152,7 @@ const RecipeBuilder: React.FC = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    table: 'Recipe',  // Example: 'users' table
+                    table: 'Recipe', 
                     data: recipeSubmit,
                 }),
             });
