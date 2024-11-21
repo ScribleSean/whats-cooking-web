@@ -17,9 +17,12 @@ interface RecipeSubmission {
     Recipe_Name: String;
     Prep_Time: number;
     Cook_Time: number;
+    Additional_Time: number;
     Servings: number;
     Calories: number;
     Ingredients: RecipeIngredient[];
+    Number_Of_Saves: number;
+    Average_Rating: number;
     Directions: string;
 }
 
@@ -42,9 +45,12 @@ const RecipeBuilder: React.FC = () => {
         Recipe_Name: '',
         Prep_Time: 0,
         Cook_Time: 0,
+        Additional_Time: 0,
         Servings: 0,
         Calories: 0,
         Ingredients: Array(0),
+        Number_Of_Saves: 0,
+        Average_Rating: 0,
         Directions: '',
       });
 
@@ -131,12 +137,18 @@ const RecipeBuilder: React.FC = () => {
     }
     
     const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = event.target;
-    
+        var { name, value } = event.target;
+        let newValue: string | number = value;
+
+        console.log(name);
+        if(name === "Prep_Time" || name === "Cook_Time" || name === "Servings" || name === "Calories"){
+            newValue = isNaN(Number(value)) ? value : Number(value);
+        }
+
         // Update the corresponding field in the recipeSubmit state
         setRecipeSubmit((prevState) => ({
           ...prevState,
-          [name]: value
+          [name]: newValue
         }));
 
         // console.log(name + " " + value)
@@ -146,13 +158,16 @@ const RecipeBuilder: React.FC = () => {
         console.log(recipeSubmit)
 
         try {
+            console.log(JSON.stringify({
+                data: recipeSubmit,
+            }),)
+
             const response = await fetch('http://localhost:3000/insert-recipe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    table: 'Recipe', 
                     data: recipeSubmit,
                 }),
             });
@@ -178,10 +193,10 @@ const RecipeBuilder: React.FC = () => {
                         <input type="text" id="Recipe_Name" name="Recipe_Name" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Prep Time</h4>
-                        <input type="text" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
+                        <input type="number" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Cook Time</h4>
-                        <input type="text" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
+                        <input type="number" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
                         <br></br>
                         <h4 className="mt-4">Servings</h4>
                         <input type="number" id="Servings" name="Servings" onChange={handleChange}></input>

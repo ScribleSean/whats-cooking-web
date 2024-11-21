@@ -41,7 +41,7 @@ app.get('/default-ingredients', async (req: Request, res: Response) => {
   try {
       const ingredientNames = await getIngredientNames();
       res.status(200).json(ingredientNames.map((row) => row.Ingredient_Name));
-      //console.log("Names of the ingredients", ingredientNames);
+      // console.log("Names of the ingredients", ingredientNames);
   } catch (error) {
       console.error('Error fetching ingredient names:', error);
       res.status(500).json({ error: 'Failed to fetch ingredient names' });
@@ -52,7 +52,7 @@ app.get('/units', async (req: Request, res: Response) => {
   try {
       const unitNames = await getUnitNames();
       res.status(200).json(unitNames.map((row) => row.Unit));
-      //console.log("Names of the ingredients", ingredientNames);
+      // console.log("Names of the ingredients", ingredientNames);
   } catch (error) {
       console.error('Error fetching unit names:', error);
       res.status(500).json({ error: 'Failed to fetch unit names' });
@@ -117,21 +117,21 @@ app.get('/recipes', async (req: Request, res: Response) => {
 
 
 app.post('/insert-recipe', (req, res) => {
-  const { table, data } = req.body;
+  const { data } = req.body;
 
-  if (!table || !data) {
+  if (!data) {
     return res.status(400).send('Table and data are required');
   }
+
 
   // Construct dynamic SQL query
   const columns = Object.keys(data).join(', ');
   const values = Object.values(data).map(value => `'${value}'`).join(', ');
 
-  const sql = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
+  const sql = `INSERT INTO Recipe (${columns}) VALUES (${values})`;
 
   console.log(sql)
 
-  // Execute the query
   pool.query(sql, (err: any, result: any) => {
     if (err) {
       return res.status(500).send('Error inserting data');
