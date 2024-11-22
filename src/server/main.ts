@@ -8,6 +8,8 @@ import path from "path";
 const app = express();
 app.use(cors())
 
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 const constructRecipeUrl = (recipeName: string): string => {
   const formattedName = recipeName.trim().toLowerCase().replace(/\s+/g, '-');
   return `https://www.allrecipes.com/recipes/${formattedName}`;
@@ -15,6 +17,10 @@ const constructRecipeUrl = (recipeName: string): string => {
 
 app.get('/', (req: Request, res: Response) => {
   res.send("hi");
+});
+
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 app.get('/recipes', async (req: Request, res: Response) => {
