@@ -6,6 +6,7 @@ import pool from './db';
 
 
 const app = express();
+app.use(express.json())
 app.use(cors())
 
 interface DefaultIngredientName extends RowDataPacket {
@@ -19,6 +20,7 @@ interface UnitName extends RowDataPacket {
 const getIngredientNames = async (): Promise<DefaultIngredientName[]> => {
   try {
       const [rows] = await pool.query<DefaultIngredientName[]>("SELECT DISTINCT Ingredient_Name FROM Ingredient ORDER BY Ingredient_Name ASC");
+      console.log(rows);
       return rows as DefaultIngredientName[];
   } catch (error) {
       console.error("Error fetching ingredient names:", error);
@@ -29,6 +31,7 @@ const getIngredientNames = async (): Promise<DefaultIngredientName[]> => {
 const getUnitNames = async (): Promise<UnitName[]> => {
   try {
     const [rows] = await pool.query<UnitName[]>("SELECT DISTINCT Unit FROM Recipe_Content ORDER BY Unit ASC");
+    console.log(rows);
     return rows as UnitName[];
 } catch (error) {
     console.error("Error fetching ingredient names:", error);
@@ -116,11 +119,11 @@ app.get('/recipes', async (req: Request, res: Response) => {
 });
 
 
-app.post('/insert-recipe', (req, res) => {
+app.post('/insert-recipe', async (req, res) => {
   const { data } = req.body;
 
   if (!data) {
-    return res.status(400).send('Table and data are required');
+    return res.status(400).send('Data is required');
   }
 
 
@@ -130,14 +133,15 @@ app.post('/insert-recipe', (req, res) => {
 
   const sql = `INSERT INTO Recipe (${columns}) VALUES (${values})`;
 
-  console.log(sql)
+  //console.log(sql)
 
-  pool.query(sql, (err: any, result: any) => {
-    if (err) {
-      return res.status(500).send('Error inserting data');
-    }
+  try {
+    const result = await pool.query(sql); 
     res.status(200).json({ message: 'Data inserted successfully', result });
-  });
+  } catch (err) {
+    console.error('Error inserting data:', err); // Log the error to the console
+    res.status(500).send('Error inserting data');
+  }
 });
 
 

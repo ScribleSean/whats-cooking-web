@@ -20,7 +20,6 @@ interface RecipeSubmission {
     Additional_Time: number;
     Servings: number;
     Calories: number;
-    Ingredients: RecipeIngredient[];
     Number_Of_Saves: number;
     Average_Rating: number;
     Directions: string;
@@ -48,7 +47,6 @@ const RecipeBuilder: React.FC = () => {
         Additional_Time: 0,
         Servings: 0,
         Calories: 0,
-        Ingredients: Array(0),
         Number_Of_Saves: 0,
         Average_Rating: 0,
         Directions: '',
@@ -107,18 +105,18 @@ const RecipeBuilder: React.FC = () => {
 
     const addIngredient = () => {
         setRecipeIngredients([...recipeIngredients, {Ingredient_Name: '', Quantity: 0, Unit: '' }])
-        setRecipeSubmit((prevRecipe) => ({
-            ...prevRecipe,
-            Ingredients: [...prevRecipe.Ingredients, {Ingredient_Name: '', Quantity: 0, Unit: ''}], // Add new ingredient to the array
-          }));
+        // setRecipeSubmit((prevRecipe) => ({
+        //     ...prevRecipe,
+        //     Ingredients: [...prevRecipe.Ingredients, {Ingredient_Name: '', Quantity: 0, Unit: ''}], // Add new ingredient to the array
+        //   }));
     }
 
     const deleteIngredient = (index: number) => {
         setRecipeIngredients(recipeIngredients.filter((_, i) => i !== index))
-        setRecipeSubmit((prevRecipeSubmit) => ({
-            ...prevRecipeSubmit,
-            Ingredients: prevRecipeSubmit.Ingredients.filter((_, i) => i !== index),
-          }));
+        // setRecipeSubmit((prevRecipeSubmit) => ({
+        //     ...prevRecipeSubmit,
+        //     Ingredients: prevRecipeSubmit.Ingredients.filter((_, i) => i !== index),
+        //   }));
     }
 
     const handleIngredientChange = (index: number, field: keyof RecipeIngredient, value: string | number) => {
@@ -126,7 +124,7 @@ const RecipeBuilder: React.FC = () => {
         updatedIngredients[index] = { ...updatedIngredients[index], [field]: value }
         setRecipeIngredients(updatedIngredients);
         setRecipeSubmit((prevRecipeSubmit) => {
-            const updatedIngredients = [...prevRecipeSubmit.Ingredients];
+            // const updatedIngredients = [...prevRecipeSubmit.Ingredients];
             updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
       
             return {
@@ -140,7 +138,7 @@ const RecipeBuilder: React.FC = () => {
         var { name, value } = event.target;
         let newValue: string | number = value;
 
-        console.log(name);
+        // console.log(name);
         if(name === "Prep_Time" || name === "Cook_Time" || name === "Servings" || name === "Calories"){
             newValue = isNaN(Number(value)) ? value : Number(value);
         }
@@ -158,10 +156,6 @@ const RecipeBuilder: React.FC = () => {
         console.log(recipeSubmit)
 
         try {
-            console.log(JSON.stringify({
-                data: recipeSubmit,
-            }),)
-
             const response = await fetch('http://localhost:3000/insert-recipe', {
                 method: 'POST',
                 headers: {
@@ -175,7 +169,7 @@ const RecipeBuilder: React.FC = () => {
             console.log(response)
 
             if (!response.ok) {
-                throw new Error('Failed to fetch data');
+                throw new Error(`Failed to fetch data: ${response.statusText}`);
             }
         }
         catch (error) {
