@@ -3,23 +3,56 @@ import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface LoginProps {
-    onLogin: () => void;
+    onLogin: (userData: UserData) => void;
+}
+
+interface UserData {
+	email: string;
+}
+
+interface LoginResponse {
+	success: boolean;
+	message: string;
+	user?: UserData;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-
-    const handleLogin = (e: React.FormEvent) => {
+    const [isLoading, setIsLoading] = useState(false);
+	
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Mock authentication check
-        if (username === 'user' && password === 'password') {
-            onLogin(); // Call the parent component's login handler
-            setError('');
-        } else {
-            setError('Invalid username or password');
-        }
+	setError('');
+	setIsLoading(true);
+	
+	try {
+		const response = await fetch('/login', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				username,
+				password,
+			}),
+		});
+		console.log(username);
+
+		const data: LoginResponse = await response.json();
+		if (data.success && data.user) {
+			onLogin(data.user);
+		}
+		else {
+			setError(data.message || 'Invalid username or password');	
+		}	
+	} catch (error) {
+		setError('An error occured while logging in');
+		console.error('Login error: ', error);
+	} finally {
+		setIsLoading(false);
+	}
     };
 
     return (

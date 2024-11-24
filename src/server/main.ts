@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors())
-
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../dist')));
 
 const constructRecipeUrl = (recipeName: string): string => {
@@ -64,6 +64,39 @@ app.get('/recipes', async (req: Request, res: Response) => {
       res.status(500).send('Unknown error fetching recipes');
     }
   }
+});
+
+app.post('/login', async (req: Request, res: Response) => {
+	try {
+		const { username, password } = req.body;
+		const user = await pool.query('SELECT Email, Password FROM User Where Email=?', [username]);
+		if (!user) {
+			return res.json({
+				success: false,
+				message: 'User not found'
+			});
+		}
+		
+		const valid_password = (password == user.Password);
+		if (!valid_password) {
+			return res.json({
+				success: false,
+				message: 'Invalid password'
+			});
+		}
+
+		res.json({
+			success: true,
+			message: 'Login success',
+			user: username
+		});
+	} catch (error) {
+		console.log(error);
+		res.json({
+			success: false,
+			message: 'error during login'
+		});
+	}	
 });
 
 app.get('*', (req: Request, res: Response) => {
