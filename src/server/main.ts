@@ -134,14 +134,15 @@ app.post('/insert-recipe', async (req, res) => {
 
   // Construct dynamic SQL query
   const columns = Object.keys(data).join(', ');
-  const values = Object.values(data).map(value => `'${value}'`).join(', ');
+  const placeholders = Object.values(data).map(() => '?').join(', ');
+  const values = Object.values(data);
 
-  const sql = `INSERT INTO Recipe (${columns}) VALUES (${values})`;
+  const sql = `INSERT INTO Recipe (${columns}) VALUES (${placeholders})`;
 
   //console.log(sql)
 
   try {
-    const result = await pool.query(sql); 
+    const result = await pool.execute(sql, values); 
     res.status(200).json({ message: 'Data inserted successfully', result });
   } catch (err) {
     console.error('Error inserting data into Recipe:', err); // Log the error to the console
@@ -164,15 +165,11 @@ app.post('/insert-recipe-content', async (req, res) => {
                   LIMIT 1;`;
   
   const query2 = `SELECT Ingredient_ID FROM Ingredient i
-                  WHERE '${data.Ingredient_Name}' = i.Ingredient_Name`;
+                  WHERE ? = i.Ingredient_Name`;
 
-
-  // console.log(query1)
-
-  // console.log(query2)
 
   const [rows1] = await pool.query<RowDataPacket[]>(query1);
-  const [rows2] = await pool.query<RowDataPacket[]>(query2);
+  const [rows2] = await pool.execute<RowDataPacket[]>(query2, [data.Ingredient_Name]);
 
   const Recipe_ID = rows1[0].Recipe_ID;
   const Ingredient_ID = rows2[0].Ingredient_ID;
@@ -180,22 +177,24 @@ app.post('/insert-recipe-content', async (req, res) => {
   delete data.Ingredient_Name;
   
   var columns = Object.keys(data).join(', ');
-  var values = Object.values(data).map(value => `'${value}'`).join(', ');
-  
+  var placeholders = Object.values(data).map(() => '?').join(', ');
+  const values = Object.values(data);
+
+  placeholders = '?, ?, ' + placeholders;
   columns = 'Recipe_ID, Ingredient_ID, ' + columns;
-  values = Recipe_ID + ', ' + Ingredient_ID + ', ' + values;
+  var extraValues = [Recipe_ID, Ingredient_ID];
+  extraValues.push(...values)
 
-  // console.log(columns);
-  // console.log(values);
+  // console.log(extraValues)
 
-  const sql = `INSERT INTO Recipe_Content (${columns}) VALUES (${values})`;
+  const sql = `INSERT INTO Recipe_Content (${columns}) VALUES (${[placeholders]})`;
 
-  console.log(sql)
+  // console.log(sql)
 
   // res.status(200).json({message: 'Test Queries ran.'})
 
   try {
-    const result = await pool.query(sql); 
+    const result = await pool.execute(sql, extraValues); 
     res.status(200).json({ message: 'Data inserted successfully', result });
   } catch (err) {
     console.error('Error inserting data into Recipe_Content:', err); // Log the error to the console

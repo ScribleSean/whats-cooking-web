@@ -1,11 +1,6 @@
 // RecipeBuilder.tsx
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import mysql, { RowDataPacket } from 'mysql2/promise';
-
-// interface DefaultIngredientName extends RowDataPacket {
-//     Ingredient_Name: string;
-// }
 
 interface RecipeIngredient {
     Ingredient_Name: string;
@@ -24,17 +19,6 @@ interface RecipeSubmission {
     Average_Rating: number;
     Directions: string;
 }
-
-// interface Recipe {
-//     Recipe_ID: number;
-//     Recipe_Name: string;
-//     Prep_Time: number;
-//     Cook_Time: number;
-//     Servings: number;
-//     Calories: number;
-//     Ingredients: RecipeIngredient[];
-//     Directions: string;
-// }
 
 const RecipeBuilder: React.FC = () => {
     const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([])
@@ -105,33 +89,16 @@ const RecipeBuilder: React.FC = () => {
 
     const addIngredient = () => {
         setRecipeIngredients([...recipeIngredients, {Ingredient_Name: '', Quantity: 0, Unit: '' }])
-        // setRecipeSubmit((prevRecipe) => ({
-        //     ...prevRecipe,
-        //     Ingredients: [...prevRecipe.Ingredients, {Ingredient_Name: '', Quantity: 0, Unit: ''}], // Add new ingredient to the array
-        //   }));
     }
 
     const deleteIngredient = (index: number) => {
         setRecipeIngredients(recipeIngredients.filter((_, i) => i !== index))
-        // setRecipeSubmit((prevRecipeSubmit) => ({
-        //     ...prevRecipeSubmit,
-        //     Ingredients: prevRecipeSubmit.Ingredients.filter((_, i) => i !== index),
-        //   }));
     }
 
     const handleIngredientChange = (index: number, field: keyof RecipeIngredient, value: string | number) => {
         const updatedIngredients = [...recipeIngredients];
         updatedIngredients[index] = { ...updatedIngredients[index], [field]: value }
         setRecipeIngredients(updatedIngredients);
-        // setRecipeSubmit((prevRecipeSubmit) => {
-        //     // const updatedIngredients = [...prevRecipeSubmit.Ingredients];
-        //     updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
-      
-        //     return {
-        //       ...prevRecipeSubmit,
-        //       Ingredients: updatedIngredients,
-        //     };
-        //   });
     }
     
     const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -225,11 +192,6 @@ const RecipeBuilder: React.FC = () => {
                         <h4 className="mt-4">Calories</h4>
                         <input type="number" id="Calories" name="Calories" onChange={handleChange}></input>
                         <br></br>
-                        {/* Have a button to add ingredients... */}
-                        {/* When button is pressed, an alphabetically sorted dropdown containing ingredients & units will appear, and user can input a number for quantity */}
-                        {/* A button should also appear to remove this ingredient */}
-                        {/* User will be able to press this button multiple times, with each press adding a new ingredient */}
-                        {/* The add ingrdient button should be 'pushed down' such that all ingredients appear before it  */}
                         <div className="col-md-6 offset-md-3">
                             <h4>Ingredients</h4>
                             {recipeIngredients.map((ingredient, index) => (
@@ -251,7 +213,7 @@ const RecipeBuilder: React.FC = () => {
                                         type="number"
                                         placeholder="Quantity"
                                         value={ingredient.Quantity}
-                                        onChange={(e) => handleIngredientChange(index, 'Quantity', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => handleIngredientChange(index, 'Quantity', parseFloat(e.target.value))}
                                         className="form-control mb-2"
                                     />
                                     <select
@@ -288,7 +250,6 @@ const RecipeBuilder: React.FC = () => {
                         <button
                             type="button"
                             className="btn btn-success mt-3"
-                            // onClick={() => alert(JSON.stringify(recipeIngredients, null, 2))}
                             onClick={handleSubmit}
                         >
                             Submit Recipe
