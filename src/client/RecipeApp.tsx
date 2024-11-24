@@ -27,7 +27,7 @@ const RecipeApp: React.FC = () => {
     const selectedRecipeRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        fetch('http://localhost:3000/recipes')
+        fetch('https://whats-cooking.fyi/recipes')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
