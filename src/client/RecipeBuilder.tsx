@@ -96,11 +96,11 @@ const RecipeBuilder: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        console.log("Updated defaultIngredients:", defaultIngredients);
+        // console.log("Updated defaultIngredients:", defaultIngredients);
     }, [defaultIngredients]);
 
     useEffect(() => {
-        console.log("Updated units:", units);
+        // console.log("Updated units:", units);
     }, [units]);
 
     const addIngredient = () => {
@@ -123,15 +123,15 @@ const RecipeBuilder: React.FC = () => {
         const updatedIngredients = [...recipeIngredients];
         updatedIngredients[index] = { ...updatedIngredients[index], [field]: value }
         setRecipeIngredients(updatedIngredients);
-        setRecipeSubmit((prevRecipeSubmit) => {
-            // const updatedIngredients = [...prevRecipeSubmit.Ingredients];
-            updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
+        // setRecipeSubmit((prevRecipeSubmit) => {
+        //     // const updatedIngredients = [...prevRecipeSubmit.Ingredients];
+        //     updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
       
-            return {
-              ...prevRecipeSubmit,
-              Ingredients: updatedIngredients,
-            };
-          });
+        //     return {
+        //       ...prevRecipeSubmit,
+        //       Ingredients: updatedIngredients,
+        //     };
+        //   });
     }
     
     const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -171,6 +171,33 @@ const RecipeBuilder: React.FC = () => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch data: ${response.statusText}`);
             }
+            else{
+                for(let i = 0; i < recipeIngredients.length; i++){
+                    console.log(recipeIngredients[i]);
+                    try{
+                        const response = await fetch('http://localhost:3000/insert-recipe-content', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                data: recipeIngredients[i],
+                            }),
+                        });
+                        console.log(response)
+
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch data: ${response.statusText}`);
+                        }
+                    }
+                    catch (error) {
+                        console.error(error);
+                    }
+                }
+            }
+        
+            //redirect to the /Recipe page...
+            
         }
         catch (error) {
             console.error(error);
