@@ -56,7 +56,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </form>
                     </div>
                     <div className="card-footer">
-                        <a href="/registers" className='card-link'>Register here</a>
+                        <a href="/register" className='card-link'>Register here</a>
                     </div>
                 </div>
             </div>

@@ -3,25 +3,23 @@ import { RowDataPacket } from 'mysql2'
 import ViteExpress from "vite-express";
 import cors from 'cors';
 import pool from './db';
+import { fileURLToPath } from 'url';
 import path from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const app = express();
 app.use(cors())
 
-app.use(express.static(path.join(__dirname, '../client/dist')));
+app.use(express.static(path.join(__dirname, '../../dist')));
 
 const constructRecipeUrl = (recipeName: string): string => {
   const formattedName = recipeName.trim().toLowerCase().replace(/\s+/g, '-');
   return `https://www.allrecipes.com/recipes/${formattedName}`;
 };
 
-app.get('/', (req: Request, res: Response) => {
-  res.send("hi");
-});
-
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
 
 app.get('/recipes', async (req: Request, res: Response) => {
   try {
@@ -34,7 +32,6 @@ app.get('/recipes', async (req: Request, res: Response) => {
     `;
     
     const [rows] = await pool.query<RowDataPacket[]>(query);
-
     const recipes = rows.reduce((acc: any, row: any) => {
       const recipeId = row.Recipe_ID;
       if (!acc[recipeId]) {
@@ -57,7 +54,6 @@ app.get('/recipes', async (req: Request, res: Response) => {
       });
       return acc;
     }, {});
-
     res.status(200).json(Object.values(recipes)); 
   } catch (err) {
     if (err instanceof Error) {
@@ -68,6 +64,10 @@ app.get('/recipes', async (req: Request, res: Response) => {
       res.status(500).send('Unknown error fetching recipes');
     }
   }
+});
+
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../../dist/index.html'));
 });
 
 
