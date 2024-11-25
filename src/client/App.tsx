@@ -21,12 +21,14 @@ const App: React.FC = () => {
             <div className="container">
                 <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
                     <Link className='navbar-brand' to='/'>RecipeApp</Link>
+                    <Link className='navbar-nav' to='/recipebuilder'>Recipe Builder</Link>
                 </nav>
+                
                 <Routes>
                     <Route path="/" element={isLoggedIn ? <Navigate to="/recipe" /> : <Login onLogin={handleLogin} />} />
                     <Route path="/recipe" element={isLoggedIn ? <RecipeApp /> : <Navigate to="/" />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path ="/recipebuilder" element={<RecipeBuilder />} />
+                    <Route path ="/recipebuilder" element={isLoggedIn ? <RecipeBuilder /> : <Navigate to="/" />} />
                 </Routes>
             </div>            
         </Router>     

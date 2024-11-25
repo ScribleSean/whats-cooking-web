@@ -1,6 +1,7 @@
 // RecipeBuilder.tsx
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from 'react-router-dom';
 
 interface RecipeIngredient {
     Ingredient_Name: string;
@@ -35,6 +36,8 @@ const RecipeBuilder: React.FC = () => {
         Average_Rating: 0,
         Directions: '',
       });
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchIngredientNames = async () => {
@@ -162,9 +165,9 @@ const RecipeBuilder: React.FC = () => {
                     }
                 }
             }
-        
+            console.log("All inserts completed, redirecting... ")
             //redirect to the /Recipe page...
-            
+            navigate('/recipe');
         }
         catch (error) {
             console.error(error);
