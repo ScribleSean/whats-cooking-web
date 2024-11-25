@@ -176,7 +176,7 @@ const RecipeBuilder: React.FC = () => {
 
     return (
         <div className="container mt-4">
-            <h1 className="text-center mb-4">Recipe Builder</h1>
+            <h1 className="text-center mb-4" style={{ color: 'orange' }}>Recipe Builder</h1>
             <div className="row">
                 <div className="col-md-4">
                     <div className="list-group">
