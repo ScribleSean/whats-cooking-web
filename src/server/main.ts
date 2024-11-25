@@ -15,6 +15,59 @@ app.use(cors())
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../dist')));
 
+interface DefaultIngredientName extends RowDataPacket {
+  Ingredient_Name: string;
+}
+
+interface UnitName extends RowDataPacket {
+  Unit: string;
+}
+
+const getIngredientNames = async (): Promise<DefaultIngredientName[]> => {
+  try {
+      const [rows] = await pool.query<DefaultIngredientName[]>("SELECT DISTINCT Ingredient_Name FROM Ingredient ORDER BY Ingredient_Name ASC");
+      // console.log(rows);
+      return rows as DefaultIngredientName[];
+  } catch (error) {
+      console.error("Error fetching ingredient names:", error);
+      throw error;
+  }
+};
+
+const getUnitNames = async (): Promise<UnitName[]> => {
+  try {
+    const [rows] = await pool.query<UnitName[]>("SELECT DISTINCT Unit FROM Recipe_Content ORDER BY Unit ASC");
+    // console.log(rows);
+    return rows as UnitName[];
+} catch (error) {
+    console.error("Error fetching ingredient names:", error);
+    throw error;
+}
+};
+
+
+app.get('/default-ingredients', async (req: Request, res: Response) => {
+  try {
+      const ingredientNames = await getIngredientNames();
+      res.status(200).json(ingredientNames.map((row) => row.Ingredient_Name));
+      // console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching ingredient names:', error);
+      res.status(500).json({ error: 'Failed to fetch ingredient names' });
+  }
+});
+
+app.get('/units', async (req: Request, res: Response) => {
+  try {
+      const unitNames = await getUnitNames();
+      res.status(200).json(unitNames.map((row) => row.Unit));
+      // console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching unit names:', error);
+      res.status(500).json({ error: 'Failed to fetch unit names' });
+  }
+});
+
 const constructRecipeUrl = (recipeName: string): string => {
   const formattedName = recipeName.trim().toLowerCase().replace(/\s+/g, '-');
   return `https://www.allrecipes.com/recipes/${formattedName}`;
@@ -138,6 +191,85 @@ app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));
 });
 
+
+app.post('/insert-recipe', async (req, res) => {
+  const { data } = req.body;
+
+  if (!data) {
+    return res.status(400).send('Data is required');
+  }
+
+
+  // Construct dynamic SQL query
+  const columns = Object.keys(data).join(', ');
+  const placeholders = Object.values(data).map(() => '?').join(', ');
+  const values = Object.values(data);
+
+  const sql = `INSERT INTO Recipe (${columns}) VALUES (${placeholders})`;
+
+  //console.log(sql)
+
+  try {
+    const result = await pool.execute(sql, values); 
+    res.status(200).json({ message: 'Data inserted successfully', result });
+  } catch (err) {
+    console.error('Error inserting data into Recipe:', err); // Log the error to the console
+    res.status(500).send('Error inserting data');
+  }
+});
+
+app.post('/insert-recipe-content', async (req, res) => {
+  const { data } = req.body;
+
+  if (!data) {
+    return res.status(400).send('Data is required');
+  }
+
+  // Construct dynamic SQL query
+
+  
+  const query1 = `SELECT Recipe_ID FROM Recipe r
+                  ORDER BY Recipe_ID DESC
+                  LIMIT 1;`;
+  
+  const query2 = `SELECT Ingredient_ID FROM Ingredient i
+                  WHERE ? = i.Ingredient_Name`;
+
+
+  const [rows1] = await pool.query<RowDataPacket[]>(query1);
+  const [rows2] = await pool.execute<RowDataPacket[]>(query2, [data.Ingredient_Name]);
+
+  const Recipe_ID = rows1[0].Recipe_ID;
+  const Ingredient_ID = rows2[0].Ingredient_ID;
+
+  delete data.Ingredient_Name;
+  
+  var columns = Object.keys(data).join(', ');
+  var placeholders = Object.values(data).map(() => '?').join(', ');
+  const values = Object.values(data);
+
+
+  columns = 'Recipe_ID, Ingredient_ID, ' + columns;
+  placeholders = '?, ?, ' + placeholders;
+  var extraValues = [Recipe_ID, Ingredient_ID];
+  extraValues.push(...values)
+
+  // console.log(extraValues)
+
+  const sql = `INSERT INTO Recipe_Content (${columns}) VALUES (${[placeholders]})`;
+
+  // console.log(sql)
+
+  // res.status(200).json({message: 'Test Queries ran.'})
+
+  try {
+    const result = await pool.execute(sql, extraValues); 
+    res.status(200).json({ message: 'Data inserted successfully', result });
+  } catch (err) {
+    console.error('Error inserting data into Recipe_Content:', err); // Log the error to the console
+    res.status(500).send('Error inserting data');
+  }
+});
 
 ViteExpress.listen(app, 3000, () =>
   console.log("Server is listening on port 3000..."),

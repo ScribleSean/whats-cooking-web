@@ -1,6 +1,7 @@
 // RecipeApp.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import db from '../server/db';
 
 interface Ingredient {
     Ingredient_Name: string;
