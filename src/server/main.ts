@@ -180,8 +180,9 @@ app.post('/insert-recipe-content', async (req, res) => {
   var placeholders = Object.values(data).map(() => '?').join(', ');
   const values = Object.values(data);
 
-  placeholders = '?, ?, ' + placeholders;
+
   columns = 'Recipe_ID, Ingredient_ID, ' + columns;
+  placeholders = '?, ?, ' + placeholders;
   var extraValues = [Recipe_ID, Ingredient_ID];
   extraValues.push(...values)
 
