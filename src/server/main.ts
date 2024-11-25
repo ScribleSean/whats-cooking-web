@@ -11,8 +11,8 @@ const __dirname = path.dirname(__filename);
 
 
 const app = express();
-app.use(express.json())
 app.use(cors())
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../dist')));
 
 interface DefaultIngredientName extends RowDataPacket {
@@ -118,6 +118,74 @@ app.get('/recipes', async (req: Request, res: Response) => {
     }
   }
 });
+
+app.post('/login', async (req: Request, res: Response) => {
+	try {
+		const { username, password } = req.body;
+		const [user] = await pool.query<RowDataPacket[]>('SELECT Email, Password FROM User Where Email=?', [username]);
+		if (!user) {
+			return res.json({
+				success: false,
+				message: 'User not found'
+			});
+		}
+		
+		let valid_password = false;
+		if (password == user[0].Password) valid_password = true;
+		if (!valid_password) {
+			return res.json({
+				success: false,
+				message: 'Invalid password'
+			});
+		}
+
+		res.json({
+			success: true,
+			message: 'Login success',
+			user: username
+		});
+	} catch (error) {
+		console.log(error);
+		res.json({
+			success: false,
+			message: 'error during login'
+		});
+	}	
+});
+
+app.post('/newuser', async (req: Request, res: Response) => {
+	try {
+		const { username, password } = req.body;
+		const [user] = await pool.query<RowDataPacket[]>('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
+		if (!user) {
+			return res.json({
+				success: false,
+				message: 'Failed to create.'
+			});
+		}
+
+		if (user.affectedRows != 1) {
+			return res.json({
+				success: false,
+				message: 'Error; modified too many rows.'
+			});
+		}
+		
+		res.json({
+			success: true,
+			message: 'successfully created user in db',
+			user: username
+		});
+
+	} catch (error) {
+		console.log(error);
+		res.json({
+			success: false,
+			message: 'error during login'
+		});
+	} 	
+});
+
 
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));
