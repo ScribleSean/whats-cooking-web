@@ -69,7 +69,7 @@ app.get('/recipes', async (req: Request, res: Response) => {
 app.post('/login', async (req: Request, res: Response) => {
 	try {
 		const { username, password } = req.body;
-		const user = await pool.query('SELECT Email, Password FROM User Where Email=?', [username]);
+		const [user] = await pool.query<RowDataPacket[]>('SELECT Email, Password FROM User Where Email=?', [username]);
 		if (!user) {
 			return res.json({
 				success: false,
@@ -77,7 +77,8 @@ app.post('/login', async (req: Request, res: Response) => {
 			});
 		}
 		
-		const valid_password = (password == user.Password);
+		let valid_password = false;
+		if (password == user[0].Password) valid_password = true;
 		if (!valid_password) {
 			return res.json({
 				success: false,
