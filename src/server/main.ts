@@ -100,6 +100,40 @@ app.post('/login', async (req: Request, res: Response) => {
 	}	
 });
 
+app.post('/newuser', async (req: Request, res: Response) => {
+	try {
+		const { username, password } = req.body;
+		const [user] = await pool.query<RowDataPacket[]>('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
+		if (!user) {
+			return res.json({
+				success: false,
+				message: 'Failed to create.'
+			});
+		}
+
+		if (user.affectedRows != 1) {
+			return res.json({
+				success: false,
+				message: 'Error; modified too many rows.'
+			});
+		}
+		
+		res.json({
+			success: true,
+			message: 'successfully created user in db',
+			user: username
+		});
+
+	} catch (error) {
+		console.log(error);
+		res.json({
+			success: false,
+			message: 'error during login'
+		});
+	} 	
+});
+
+
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));
 });

@@ -1,21 +1,62 @@
 // Login.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const Register: React.FC = () => {
+
+interface RegisterProps {
+    onRegister: (userData: UserData) => void;
+}
+
+interface UserData {
+	email: string;
+}
+
+interface RegisterResponse {
+	success: boolean;
+	message: string;
+	user?: UserData;
+}
+
+const Register: React.FC<RegisterProps> = ({onRegister}) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-
-    const handleLogin = (e: React.FormEvent) => {
+    const [loading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Mock authentication check
-        if (username === 'user' && password === 'password') {
-            setError('');
-        } else {
-            setError('Invalid username or password');
-        }
+	setError('');
+	setIsLoading(true);
+	
+	try {
+		const response = await fetch('/newuser', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				username,
+				password,
+			}),
+		});
+
+		const data: RegisterResponse = await response.json();
+		console.log(data);
+		if (data.success && data.user) {
+			navigate('/');
+		}
+		else {
+			setError(data.message || 'Invalid username or password');	
+		}	
+	} catch (error) {
+		setError('An error occured while registering');
+		console.error('Register error: ', error);
+	} finally {
+		setIsLoading(false);
+	}
     };
+
 
     return (
         <div className="row pt-5 justify-content-center">
@@ -23,9 +64,9 @@ const Register: React.FC = () => {
                 <div className="card">
                     <div className="card-body">
                         <h2 className="card-title text-center mb-4">Register</h2>
-                        <form onSubmit={handleLogin}>
+                        <form onSubmit={handleRegister}>
                             <div className="mb-3">
-                                <label htmlFor="username" className="form-label">Username</label>
+                                <label htmlFor="username" className="form-label">Email</label>
                                 <input
                                     type="text"
                                     className="form-control"
@@ -51,7 +92,7 @@ const Register: React.FC = () => {
                         </form>
                     </div>
                     <div className="card-footer">
-                        <a href="#" className='card-link'>Login here</a>
+                        <a href="#" className='card-link'>Login Here</a>
                     </div>
                 </div>
             </div>

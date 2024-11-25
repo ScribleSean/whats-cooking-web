@@ -63,7 +63,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         <h2 className="card-title text-center mb-4">Login</h2>
                         <form onSubmit={handleLogin}>
                             <div className="mb-3">
-                                <label htmlFor="username" className="form-label">Username</label>
+                                <label htmlFor="username" className="form-label">Email</label>
                                 <input
                                     type="text"
                                     className="form-control"
@@ -89,7 +89,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </form>
                     </div>
                     <div className="card-footer">
-                        <a href="/register" className='card-link'>Register here</a>
+                        <a href="/register" className='card-link'>Register Here</a>
                     </div>
                 </div>
             </div>
