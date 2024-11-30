@@ -67,7 +67,7 @@ const App: React.FC = () => {
             path="/profile"
             element={
               isLoggedIn ? (
-                <UserProfile />
+                <UserProfile email={userEmail} />
               ) : (
                 <Login onLogin={(userData) => handleLogin(userData)} />
               )

@@ -17,18 +17,41 @@ interface Review {
   Comment: string;
 }
 
-const UserProfile: React.FC = () => {
+interface UserProfileProps {
+  email: string;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
   const [profile, setProfile] = useState<{
     savedRecipes: Recipe[];
     reviews: Review[];
   }>({ savedRecipes: [], reviews: [] });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/user-profile/test.test@gmail.com") // Replace with actual user email
-      .then((response) => response.json())
-      .then((data) => setProfile(data))
-      .catch((error) => console.error("Error fetching user profile:", error));
-  }, []);
+    const fetchUserProfile = async () => {
+      try {
+        const url = `/user-profile/${email}`;
+        console.log(`Fetching user profile from URL: ${url}`);
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("Fetched user profile data:", data);
+        setProfile(data);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        setError("Failed to fetch user profile. Please try again later.");
+      }
+    };
+
+    fetchUserProfile();
+  }, [email]);
+
+  if (error) {
+    return <div className="alert alert-danger">{error}</div>;
+  }
 
   return (
     <div className="container mt-4">

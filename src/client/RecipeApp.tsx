@@ -7,6 +7,11 @@ interface Ingredient {
   Unit: string;
 }
 
+interface Review {
+  rating: number;
+  comment: string;
+}
+
 interface Recipe {
   Recipe_ID: number;
   Recipe_Name: string;
@@ -19,11 +24,6 @@ interface Recipe {
   Saves: number;
   Average_Rating: number;
   Reviews: Review[];
-}
-
-interface Review {
-  rating: number;
-  comment: string;
 }
 
 const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
@@ -43,9 +43,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
           throw new Error("Failed to fetch user profile");
         }
         const data = await response.json();
-        const savedRecipeIds = data.savedRecipes.map(
-          (recipe: Recipe) => recipe.Recipe_ID
-        );
+        const savedRecipeIds = data.map((recipe: Recipe) => recipe.Recipe_ID);
         setSavedRecipes(savedRecipeIds);
       } catch (error) {
         console.error("Error fetching user profile:", error);
@@ -73,19 +71,76 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       }
     };
 
+    const fetchRecipeSaves = async () => {
+      try {
+        const response = await fetch("/recipe-saves");
+        if (!response.ok) {
+          throw new Error("Failed to fetch recipe saves");
+        }
+        const data = await response.json();
+        setRecipes((prevRecipes) =>
+          prevRecipes.map((recipe) => ({
+            ...recipe,
+            Saves:
+              data.find((item: any) => item.Recipe_ID === recipe.Recipe_ID)
+                ?.Saves || 0,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching recipe saves:", error);
+      }
+    };
+
+    const fetchRecipeRatings = async () => {
+      try {
+        const response = await fetch("/recipe-ratings");
+        if (!response.ok) {
+          throw new Error("Failed to fetch recipe ratings");
+        }
+        const data = await response.json();
+        setRecipes((prevRecipes) =>
+          prevRecipes.map((recipe) => ({
+            ...recipe,
+            Average_Rating:
+              data.find((item: any) => item.Recipe_ID === recipe.Recipe_ID)
+                ?.Average_Rating || 0,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching recipe ratings:", error);
+      }
+    };
+
     const fetchData = async () => {
       await fetchSavedRecipes();
       await fetchRecipes();
+      await fetchRecipeSaves();
+      await fetchRecipeRatings();
       setLoading(false);
     };
 
     fetchData();
   }, [email]);
 
-  const handleRecipeClick = (recipe: Recipe) => {
+  const handleRecipeClick = async (recipe: Recipe) => {
     setSelectedRecipe((prevRecipe) =>
       prevRecipe?.Recipe_ID === recipe.Recipe_ID ? null : recipe
     );
+
+    if (recipe.Recipe_ID !== selectedRecipe?.Recipe_ID) {
+      try {
+        const response = await fetch(`/recipe-reviews/${recipe.Recipe_ID}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch recipe reviews");
+        }
+        const data = await response.json();
+        setSelectedRecipe((prevRecipe) =>
+          prevRecipe ? { ...prevRecipe, Reviews: data } : null
+        );
+      } catch (error) {
+        console.error("Error fetching recipe reviews:", error);
+      }
+    }
   };
 
   const handleSaveRecipe = async (recipeId: number) => {
