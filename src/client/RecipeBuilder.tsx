@@ -175,92 +175,92 @@ const RecipeBuilder: React.FC = () => {
     }
 
     return (
-        <div className="container mt-4">
-            <h1 className="text-center mb-4" style={{ color: 'orange' }}>Recipe Builder</h1>
-            <div className="row">
-                <div className="col-md-4">
-                    <div className="list-group">
-                        <h4 className="mt-4">Recipe Name</h4>
-                        <input type="text" id="Recipe_Name" name="Recipe_Name" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Prep Time</h4>
-                        <input type="number" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Cook Time</h4>
-                        <input type="number" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Servings</h4>
-                        <input type="number" id="Servings" name="Servings" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Calories</h4>
-                        <input type="number" id="Calories" name="Calories" onChange={handleChange}></input>
-                        <br></br>
-                        <div className="col-md-6 offset-md-3">
-                            <h4>Ingredients</h4>
-                            {recipeIngredients.map((ingredient, index) => (
-                                <div key={index} className="mb-3 border p-3 rounded">
-                                    <h5>Ingredient {index + 1}</h5>
-                                    <select
-                                        value={ingredient.Ingredient_Name}
-                                        onChange={(e) => handleIngredientChange(index, 'Ingredient_Name', e.target.value)}
-                                        className="form-control mb-2"
-                                    >
-                                        <option value="" disabled> --Select an Ingredient</option>
-                                        {defaultIngredients.map((defaultIngredient, index) => (
-                                            <option key={index} value={defaultIngredient}>
-                                                {defaultIngredient}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="number"
-                                        placeholder="Quantity"
-                                        value={ingredient.Quantity}
-                                        onChange={(e) => handleIngredientChange(index, 'Quantity', parseFloat(e.target.value))}
-                                        className="form-control mb-2"
-                                    />
-                                    <select
-                                        value={ingredient.Unit}
-                                        onChange={(e) => handleIngredientChange(index, 'Unit', e.target.value)}
-                                        className="form-control mb-2"
-                                    >
-                                        <option value="" disabled> --Select a unit of measurement</option>
-                                        {units.map((unit, index) => (
-                                            <option key={index} value={unit}>
-                                                {unit}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger"
-                                        onClick={() => deleteIngredient(index)}
-                                    >
-                                        Remove Ingredient
-                                    </button>
-                                </div>
-                            ))}
+       <div className="row">
+           <h1 className="text-center mb-4" style={{ color: 'orange' }}>Recipe Builder</h1>
+           <div className="col max-width">
+                <div className="list-group">
+                    <h4 className="mt-4">Recipe Name</h4>
+                    <input type="text" id="Recipe_Name" name="Recipe_Name" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Prep Time</h4>
+                    <input type="number" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Cook Time</h4>
+                    <input type="number" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Servings</h4>
+                    <input type="number" id="Servings" name="Servings" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Calories</h4>
+                    <input type="number" id="Calories" name="Calories" onChange={handleChange}></input>
+                    <br></br>
+                    <div className="col-md-6 offset-md-3">
+                        <h4>Ingredients</h4>
+                        {recipeIngredients.map((ingredient, index) => (
+                            <div key={index} className="mb-3 border p-3 rounded">
+                                <h5>Ingredient {index + 1}</h5>
+                                <select
+                                    value={ingredient.Ingredient_Name}
+                                    onChange={(e) => handleIngredientChange(index, 'Ingredient_Name', e.target.value)}
+                                    className="form-control mb-2"
+                                >
+                                    <option value="" disabled> --Select an Ingredient</option>
+                                    {defaultIngredients.map((defaultIngredient, index) => (
+                                        <option key={index} value={defaultIngredient}>
+                                            {defaultIngredient}
+                                        </option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="number"
+                                    placeholder="Quantity"
+                                    value={ingredient.Quantity}
+                                    onChange={(e) => handleIngredientChange(index, 'Quantity', parseFloat(e.target.value))}
+                                    className="form-control mb-2"
+                                />
+                                <select
+                                    value={ingredient.Unit}
+                                    onChange={(e) => handleIngredientChange(index, 'Unit', e.target.value)}
+                                    className="form-control mb-2"
+                                >
+                                    <option value="" disabled> --Select a unit of measurement</option>
+                                    {units.map((unit, index) => (
+                                        <option key={index} value={unit}>
+                                            {unit}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    className="btn btn-danger"
+                                    onClick={() => deleteIngredient(index)}
+                                >
+                                    Remove Ingredient
+                                </button>
+                            </div>
+                        ))}
 
-                            <button type="button" className="btn btn-primary mt-3" onClick={addIngredient}>
-                                Add Ingredient
-                            </button>
-
-                        </div>
-                        <h4 className="mt-4">Directions</h4>
-                        <textarea id="rdirections" name="Directions" style={{ height: '250px' }}  onChange={handleChange}></textarea>
-                        <br></br>
-
-                        <button
-                            type="button"
-                            className="btn btn-success mt-3"
-                            onClick={handleSubmit}
-                        >
-                            Submit Recipe
+                        <button type="button" className="btn btn-primary mt-3" onClick={addIngredient}>
+                            Add Ingredient
                         </button>
+
                     </div>
+                    <h4 className="mt-4">Directions</h4>
+                    <textarea id="rdirections" name="Directions" style={{ height: '250px' }}  onChange={handleChange}></textarea>
+                    <br></br>
+
+                    <button
+                        type="button"
+                        className="btn btn-success mt-3"
+                        onClick={handleSubmit}
+                    >
+                        Submit Recipe
+                    </button>
                 </div>
             </div>
         </div>
+            
+        
     );
 };
 
