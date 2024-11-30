@@ -156,20 +156,20 @@ app.post('/login', async (req: Request, res: Response) => {
 app.post('/newuser', async (req: Request, res: Response) => {
 	try {
 		const { username, password } = req.body;
-		const [user] = await pool.query<RowDataPacket[]>('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
-		if (!user) {
-			return res.json({
-				success: false,
-				message: 'Failed to create.'
-			});
-		}
+    const [result] = await pool.execute('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
+    if (!result) {
+      return res.json({
+        success: false,
+        message: 'Failed to create.'
+      });
+    }
 
-		if (user.affectedRows != 1) {
-			return res.json({
-				success: false,
-				message: 'Error; modified too many rows.'
-			});
-		}
+    if ((result as any).affectedRows != 1) {
+      return res.json({
+        success: false,
+        message: 'Error; modified too many rows.'
+      });
+    }
 		
 		res.json({
 			success: true,
@@ -270,6 +270,151 @@ app.post('/insert-recipe-content', async (req, res) => {
     res.status(500).send('Error inserting data');
   }
 });
+// Save recipe
+app.post('/save-recipe', async (req: Request, res: Response) => {
+  const { email, recipeId } = req.body;
+
+  console.log('Received request to save recipe:', { email, recipeId });
+
+  if (!email || !recipeId) {
+    console.error('Email and Recipe ID are required');
+    return res.status(400).send('Email and Recipe ID are required');
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO User_Saved_Recipe (Email, Recipe_ID)
+      VALUES (?, ?)
+    `, [email, recipeId]);
+
+    res.status(200).send('Recipe saved successfully');
+  } catch (err) {
+    console.error('Error saving recipe:', err);
+    res.status(500).send('Failed to save recipe');
+  }
+});
+
+// Unsave recipe
+app.post('/unsave-recipe', async (req: Request, res: Response) => {
+  const { email, recipeId } = req.body;
+
+  console.log('Received request to unsave recipe:', { email, recipeId });
+
+  if (!email || !recipeId) {
+    console.error('Email and Recipe ID are required');
+    return res.status(400).send('Email and Recipe ID are required');
+  }
+
+  try {
+    await pool.query(`
+      DELETE FROM User_Saved_Recipe
+      WHERE Email = ? AND Recipe_ID = ?
+    `, [email, recipeId]);
+
+    res.status(200).send('Recipe unsaved successfully');
+  } catch (err) {
+    console.error('Error unsaving recipe:', err);
+    res.status(500).send('Failed to unsave recipe');
+  }
+});
+
+// Leave a review
+app.post('/leave-review', async (req: Request, res: Response) => {
+  const { email, recipeId, rating, comment } = req.body;
+
+  console.log('Received request to leave review:', { email, recipeId, rating, comment });
+
+  if (!email || !recipeId || !rating || !comment) {
+    console.error('Email, Recipe ID, Rating, and Comment are required');
+    return res.status(400).send('Email, Recipe ID, Rating, and Comment are required');
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO User_Review (Email, Recipe_ID, Rating, Comment)
+      VALUES (?, ?, ?, ?)
+    `, [email, recipeId, rating, comment]);
+
+    res.status(200).send('Review submitted successfully');
+  } catch (err) {
+    console.error('Error submitting review:', err);
+    res.status(500).send('Failed to submit review');
+  }
+});
+
+// Fetch user profile
+app.get('/user-profile/:email', async (req: Request, res: Response) => {
+  const { email } = req.params;
+
+  console.log('Received request to fetch user profile for email:', email);
+
+  if (!email) {
+    return res.status(400).send('Email is required');
+  }
+
+  try {
+    const [savedRecipes] = await pool.query(`
+      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings, r.Directions
+      FROM Recipe r
+      JOIN User_Saved_Recipe usr ON r.Recipe_ID = usr.Recipe_ID
+      WHERE usr.Email = ?
+    `, [email]);
+
+    const [reviews] = await pool.query(`
+      SELECT r.Recipe_Name, ur.Rating, ur.Comment
+      FROM User_Review ur
+      JOIN Recipe r ON ur.Recipe_ID = r.Recipe_ID
+      WHERE ur.Email = ?
+    `, [email]);
+
+    res.status(200).json({ savedRecipes, reviews });
+  } catch (err) {
+    console.error('Error fetching user profile:', err);
+    res.status(500).send('Failed to fetch user profile');
+  }
+});
+
+app.get('/recipes', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings,
+             i.Ingredient_Name, rc.Quantity, rc.Unit, r.Directions
+      FROM Recipe r
+      JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
+      JOIN Ingredient i ON rc.Ingredient_ID = i.Ingredient_ID
+    `;
+    
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    const recipes = rows.reduce((acc: any, row: any) => {
+      const recipeId = row.Recipe_ID;
+      if (!acc[recipeId]) {
+        acc[recipeId] = {
+          Recipe_ID: recipeId,
+          Recipe_Name: row.Recipe_Name,
+          Prep_Time: row.Prep_Time,
+          Cook_Time: row.Cook_Time,
+          Calories: row.Calories,
+          Servings: row.Servings,
+          Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
+          Ingredients: [],
+          Directions: row.Directions
+        };
+      }
+      acc[recipeId].Ingredients.push({
+        Ingredient_Name: row.Ingredient_Name,
+        Quantity: row.Quantity,
+        Unit: row.Unit
+      });
+      return acc;
+    }, {});
+
+    res.status(200).json(Object.values(recipes));
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch recipes' });
+  }
+});
+
 
 ViteExpress.listen(app, 3000, () =>
   console.log("Server is listening on port 3000..."),
