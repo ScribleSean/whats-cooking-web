@@ -8,9 +8,11 @@ import RecipeBuilder from './RecipeBuilder';
 
 const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
 
-    const handleLogin = () => {
+    const handleLogin = (userData: {email: string}) => {
         setIsLoggedIn(true);
+        setUserEmail(userData.email);
     };
 
     return (
@@ -31,7 +33,7 @@ const App: React.FC = () => {
                     <Route
                         path="/"
                         element={
-                            isLoggedIn ? <Navigate to="/recipe" /> : <Login onLogin={handleLogin} />
+                            isLoggedIn ? <Navigate to="/recipe" /> : <Login onLogin={(userData) => handleLogin(userData)} />
                         }
                     />
                     <Route
@@ -41,7 +43,7 @@ const App: React.FC = () => {
                     <Route path="/register" element={<Register />} />
                     <Route
                         path="/recipebuilder"
-                        element={isLoggedIn ? <RecipeBuilder /> : <Navigate to="/" />}
+                        element={isLoggedIn ? <RecipeBuilder email={userEmail}/> : <Navigate to="/" />}
                     />
                 </Routes>
             </div>

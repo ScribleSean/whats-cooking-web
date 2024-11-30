@@ -13,7 +13,7 @@ interface UserData {
 interface LoginResponse {
 	success: boolean;
 	message: string;
-	user?: UserData;
+	user?: { email: string };
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -38,11 +38,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 				password,
 			}),
 		});
-		console.log(username);
+		// console.log(username);
 
 		const data: LoginResponse = await response.json();
+        console.log("Received login response:", data);
 		if (data.success && data.user) {
-			onLogin(data.user);
+			console.log("Login successful, setting user email:", username);
+            onLogin({ email: username });
 		}
 		else {
 			setError(data.message || 'Invalid username or password');	

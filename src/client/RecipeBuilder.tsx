@@ -10,6 +10,7 @@ interface RecipeIngredient {
 }
 
 interface RecipeSubmission {
+    Email: String;
     Recipe_Name: String;
     Prep_Time: number;
     Cook_Time: number;
@@ -21,11 +22,12 @@ interface RecipeSubmission {
     Directions: string;
 }
 
-const RecipeBuilder: React.FC = () => {
+const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([])
     const [defaultIngredients, setDefaultIngredients] = useState<string[]>([])
     const [units, setUnits] = useState<string[]>([])
     const [recipeSubmit, setRecipeSubmit] = useState<RecipeSubmission>({
+        Email: email,
         Recipe_Name: '',
         Prep_Time: 0,
         Cook_Time: 0,
@@ -123,6 +125,7 @@ const RecipeBuilder: React.FC = () => {
       };
 
     const handleSubmit = async () => {
+        
         console.log(recipeSubmit)
 
         try {
@@ -173,7 +176,7 @@ const RecipeBuilder: React.FC = () => {
             console.error(error);
         }
     }
-
+        
     return (
        <div className="row">
            <h1 className="text-center mb-4" style={{ color: 'orange' }}>Recipe Builder</h1>
