@@ -44,7 +44,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     useEffect(() => {
         const fetchIngredientNames = async () => {
             try {
-                const response = await fetch('http://localhost:3000/default-ingredients');
+                const response = await fetch('/default-ingredients');
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -63,7 +63,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
 
         const fetchUnitNames = async () => {
             try {
-                const response = await fetch('http://localhost:3000/units');
+                const response = await fetch('/units');
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -129,7 +129,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
         console.log(recipeSubmit)
 
         try {
-            const response = await fetch('http://localhost:3000/insert-recipe', {
+            const response = await fetch('/insert-recipe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
                 for(let i = 0; i < recipeIngredients.length; i++){
                     console.log(recipeIngredients[i]);
                     try{
-                        const response = await fetch('http://localhost:3000/insert-recipe-content', {
+                        const response = await fetch('/insert-recipe-content', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
