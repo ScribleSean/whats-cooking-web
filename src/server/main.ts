@@ -337,11 +337,11 @@ app.post('/unsave-recipe', async (req: Request, res: Response) => {
 
 // Leave a review
 app.post('/leave-review', async (req: Request, res: Response) => {
-  const { email, recipeId, rating, comment } = req.body;
+  const { email, recipeId, Rating, Comment } = req.body;
 
-  console.log('Received request to leave review:', { email, recipeId, rating, comment });
+  console.log('Received request to leave review:', { email, recipeId, Rating, Comment });
 
-  if (!email || !recipeId || !rating || !comment) {
+  if (!email || !recipeId || !Rating || !Comment) {
     console.error('Email, Recipe ID, Rating, and Comment are required');
     return res.status(400).send('Email, Recipe ID, Rating, and Comment are required');
   }
@@ -350,7 +350,7 @@ app.post('/leave-review', async (req: Request, res: Response) => {
     await pool.query(`
       INSERT INTO User_Review (Email, Recipe_ID, Rating, Comment)
       VALUES (?, ?, ?, ?)
-    `, [email, recipeId, rating, comment]);
+    `, [email, recipeId, Rating, Comment]);
 
     res.status(200).send('Review submitted successfully');
   } catch (err) {
