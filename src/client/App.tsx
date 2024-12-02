@@ -14,13 +14,13 @@ import {
 import RecipeBuilder from "./RecipeBuilder";
 
 const App: React.FC = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userEmail, setUserEmail] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
-    const handleLogin = (userData: {email: string}) => {
-        setIsLoggedIn(true);
-        setUserEmail(userData.email);
-    };
+  const handleLogin = (userData: { email: string }) => {
+    setIsLoggedIn(true);
+    setUserEmail(userData.email);
+  };
 
   return (
     <Router>
@@ -54,18 +54,14 @@ const App: React.FC = () => {
           />
           <Route
             path="/recipe"
-            element={isLoggedIn ? <RecipeApp /> : <Navigate to="/" />}
+            element={
+              isLoggedIn ? <RecipeApp email={userEmail} /> : <Navigate to="/" />
+            }
           />
           <Route path="/register" element={<Register />} />
           <Route
             path="/recipebuilder"
-            element={
-              isLoggedIn ? (
-                <RecipeBuilder email={userEmail} />
-              ) : (
-                <Navigate to="/" />
-              )
-            }
+            element={isLoggedIn ? <RecipeBuilder /> : <Navigate to="/" />}
           />
           <Route
             path="/profile"

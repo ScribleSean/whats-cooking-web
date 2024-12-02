@@ -5,51 +5,50 @@ interface LoginProps {
 }
 
 interface LoginResponse {
-	success: boolean;
-	message: string;
-	user?: { email: string };
+  success: boolean;
+  message: string;
+  user?: { email: string };
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-	
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-	setError('');
-	setIsLoading(true);
-	
-	try {
-		const response = await fetch('/login', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				username,
-				password,
-			}),
-		});
-		// console.log(username);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-		const data: LoginResponse = await response.json();
-        console.log("Received login response:", data);
-		if (data.success && data.user) {
-			console.log("Login successful, setting user email:", username);
-            onLogin({ email: username });
-		}
-		else {
-			setError(data.message || 'Invalid username or password');	
-		}	
-	} catch (error) {
-		setError('An error occured while logging in');
-		console.error('Login error: ', error);
-	} finally {
-		setIsLoading(false);
-	}
-    };
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      console.log("Sending login request with:", { username, password });
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+
+      const data: LoginResponse = await response.json();
+      console.log("Received login response:", data);
+      if (data.success) {
+        console.log("Login successful, setting user email:", username);
+        onLogin({ email: username });
+      } else {
+        setError(data.message || "Invalid username or password");
+      }
+    } catch (error) {
+      setError("An error occurred while logging in");
+      console.error("Login error: ", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="row pt-5 justify-content-center">
