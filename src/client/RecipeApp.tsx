@@ -268,7 +268,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                     : "Save Recipe"}
                 </button>
                 <small>
-                  Calories: {recipe.Calories} | Saves: {recipe.Saves}
+                  Calories: {recipe.Calories}
                 </small>
               </div>
             ))}

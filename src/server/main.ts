@@ -45,6 +45,21 @@ const getUnitNames = async (): Promise<UnitName[]> => {
 }
 };
 
+const getRecipeReviews = async (recipeId: number): Promise<RowDataPacket[]> => {
+  try {
+    const query = `
+      SELECT Email, Rating, Comment
+      FROM User_Review
+      WHERE Recipe_ID = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
+    return rows;
+  } catch (error) {
+    console.error('Error fetching recipe reviews:', error);
+    throw error;
+  }
+};
+
 
 app.get('/default-ingredients', async (req: Request, res: Response) => {
   try {
@@ -399,13 +414,8 @@ app.get('/recipe-ratings', async (req: Request, res: Response) => {
 app.get('/recipe-reviews/:recipeId', async (req: Request, res: Response) => {
   const { recipeId } = req.params;
   try {
-    const query = `
-      SELECT Email, Rating, Comment
-      FROM User_Review
-      WHERE Recipe_ID = ?
-    `;
-    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
-    res.status(200).json(rows);
+    const reviews = await getRecipeReviews(Number(recipeId));
+    res.status(200).json(reviews);
   } catch (error) {
     console.error('Error fetching recipe reviews:', error);
     res.status(500).json({ error: 'Failed to fetch recipe reviews' });
