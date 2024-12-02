@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { RowDataPacket } from 'mysql2'
+import { ResultSetHeader } from 'mysql2';
 import ViteExpress from "vite-express";
 import cors from 'cors';
 import pool from './db';
@@ -156,7 +157,7 @@ app.post('/login', async (req: Request, res: Response) => {
 app.post('/newuser', async (req: Request, res: Response) => {
 	try {
 		const { username, password } = req.body;
-		const [user] = await pool.query<RowDataPacket[]>('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
+		const [user] = await pool.query<ResultSetHeader>('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
 		if (!user) {
 			return res.json({
 				success: false,
