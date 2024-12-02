@@ -10,6 +10,7 @@ interface RecipeIngredient {
 }
 
 interface RecipeSubmission {
+    Email: String;
     Recipe_Name: String;
     Prep_Time: number;
     Cook_Time: number;
@@ -21,11 +22,12 @@ interface RecipeSubmission {
     Directions: string;
 }
 
-const RecipeBuilder: React.FC = () => {
+const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([])
     const [defaultIngredients, setDefaultIngredients] = useState<string[]>([])
     const [units, setUnits] = useState<string[]>([])
     const [recipeSubmit, setRecipeSubmit] = useState<RecipeSubmission>({
+        Email: email,
         Recipe_Name: '',
         Prep_Time: 0,
         Cook_Time: 0,
@@ -42,7 +44,7 @@ const RecipeBuilder: React.FC = () => {
     useEffect(() => {
         const fetchIngredientNames = async () => {
             try {
-                const response = await fetch('http://localhost:3000/default-ingredients');
+                const response = await fetch('/default-ingredients');
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -61,7 +63,7 @@ const RecipeBuilder: React.FC = () => {
 
         const fetchUnitNames = async () => {
             try {
-                const response = await fetch('http://localhost:3000/units');
+                const response = await fetch('/units');
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -123,10 +125,11 @@ const RecipeBuilder: React.FC = () => {
       };
 
     const handleSubmit = async () => {
+        
         console.log(recipeSubmit)
 
         try {
-            const response = await fetch('http://localhost:3000/insert-recipe', {
+            const response = await fetch('/insert-recipe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -145,7 +148,7 @@ const RecipeBuilder: React.FC = () => {
                 for(let i = 0; i < recipeIngredients.length; i++){
                     console.log(recipeIngredients[i]);
                     try{
-                        const response = await fetch('http://localhost:3000/insert-recipe-content', {
+                        const response = await fetch('/insert-recipe-content', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -173,94 +176,94 @@ const RecipeBuilder: React.FC = () => {
             console.error(error);
         }
     }
-
+        
     return (
-        <div className="container mt-4">
-            <h1 className="text-center mb-4" style={{ color: 'orange' }}>Recipe Builder</h1>
-            <div className="row">
-                <div className="col-md-4">
-                    <div className="list-group">
-                        <h4 className="mt-4">Recipe Name</h4>
-                        <input type="text" id="Recipe_Name" name="Recipe_Name" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Prep Time</h4>
-                        <input type="number" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Cook Time</h4>
-                        <input type="number" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Servings</h4>
-                        <input type="number" id="Servings" name="Servings" onChange={handleChange}></input>
-                        <br></br>
-                        <h4 className="mt-4">Calories</h4>
-                        <input type="number" id="Calories" name="Calories" onChange={handleChange}></input>
-                        <br></br>
-                        <div className="col-md-6 offset-md-3">
-                            <h4>Ingredients</h4>
-                            {recipeIngredients.map((ingredient, index) => (
-                                <div key={index} className="mb-3 border p-3 rounded">
-                                    <h5>Ingredient {index + 1}</h5>
-                                    <select
-                                        value={ingredient.Ingredient_Name}
-                                        onChange={(e) => handleIngredientChange(index, 'Ingredient_Name', e.target.value)}
-                                        className="form-control mb-2"
-                                    >
-                                        <option value="" disabled> --Select an Ingredient</option>
-                                        {defaultIngredients.map((defaultIngredient, index) => (
-                                            <option key={index} value={defaultIngredient}>
-                                                {defaultIngredient}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="number"
-                                        placeholder="Quantity"
-                                        value={ingredient.Quantity}
-                                        onChange={(e) => handleIngredientChange(index, 'Quantity', parseFloat(e.target.value))}
-                                        className="form-control mb-2"
-                                    />
-                                    <select
-                                        value={ingredient.Unit}
-                                        onChange={(e) => handleIngredientChange(index, 'Unit', e.target.value)}
-                                        className="form-control mb-2"
-                                    >
-                                        <option value="" disabled> --Select a unit of measurement</option>
-                                        {units.map((unit, index) => (
-                                            <option key={index} value={unit}>
-                                                {unit}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger"
-                                        onClick={() => deleteIngredient(index)}
-                                    >
-                                        Remove Ingredient
-                                    </button>
-                                </div>
-                            ))}
+       <div className="row">
+           <h1 className="text-center mb-4" style={{ color: 'orange' }}>Recipe Builder</h1>
+           <div className="col max-width">
+                <div className="list-group">
+                    <h4 className="mt-4">Recipe Name</h4>
+                    <input type="text" id="Recipe_Name" name="Recipe_Name" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Prep Time</h4>
+                    <input type="number" id="Prep_Time" name="Prep_Time" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Cook Time</h4>
+                    <input type="number" id="Cook_Time" name="Cook_Time" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Servings</h4>
+                    <input type="number" id="Servings" name="Servings" onChange={handleChange}></input>
+                    <br></br>
+                    <h4 className="mt-4">Calories</h4>
+                    <input type="number" id="Calories" name="Calories" onChange={handleChange}></input>
+                    <br></br>
+                    <div className="col-md-6 offset-md-3">
+                        <h4>Ingredients</h4>
+                        {recipeIngredients.map((ingredient, index) => (
+                            <div key={index} className="mb-3 border p-3 rounded">
+                                <h5>Ingredient {index + 1}</h5>
+                                <select
+                                    value={ingredient.Ingredient_Name}
+                                    onChange={(e) => handleIngredientChange(index, 'Ingredient_Name', e.target.value)}
+                                    className="form-control mb-2"
+                                >
+                                    <option value="" disabled> --Select an Ingredient</option>
+                                    {defaultIngredients.map((defaultIngredient, index) => (
+                                        <option key={index} value={defaultIngredient}>
+                                            {defaultIngredient}
+                                        </option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="number"
+                                    placeholder="Quantity"
+                                    value={ingredient.Quantity}
+                                    onChange={(e) => handleIngredientChange(index, 'Quantity', parseFloat(e.target.value))}
+                                    className="form-control mb-2"
+                                />
+                                <select
+                                    value={ingredient.Unit}
+                                    onChange={(e) => handleIngredientChange(index, 'Unit', e.target.value)}
+                                    className="form-control mb-2"
+                                >
+                                    <option value="" disabled> --Select a unit of measurement</option>
+                                    {units.map((unit, index) => (
+                                        <option key={index} value={unit}>
+                                            {unit}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    className="btn btn-danger"
+                                    onClick={() => deleteIngredient(index)}
+                                >
+                                    Remove Ingredient
+                                </button>
+                            </div>
+                        ))}
 
-                            <button type="button" className="btn btn-primary mt-3" onClick={addIngredient}>
-                                Add Ingredient
-                            </button>
-
-                        </div>
-                        <h4 className="mt-4">Directions</h4>
-                        <textarea id="rdirections" name="Directions" style={{ height: '250px' }}  onChange={handleChange}></textarea>
-                        <br></br>
-
-                        <button
-                            type="button"
-                            className="btn btn-success mt-3"
-                            onClick={handleSubmit}
-                        >
-                            Submit Recipe
+                        <button type="button" className="btn btn-primary mt-3" onClick={addIngredient}>
+                            Add Ingredient
                         </button>
+
                     </div>
+                    <h4 className="mt-4">Directions</h4>
+                    <textarea id="rdirections" name="Directions" style={{ height: '250px' }}  onChange={handleChange}></textarea>
+                    <br></br>
+
+                    <button
+                        type="button"
+                        className="btn btn-success mt-3"
+                        onClick={handleSubmit}
+                    >
+                        Submit Recipe
+                    </button>
                 </div>
             </div>
         </div>
+            
+        
     );
 };
 
