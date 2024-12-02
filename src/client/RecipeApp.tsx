@@ -8,8 +8,8 @@ interface Ingredient {
 }
 
 interface Review {
-  rating: number;
-  comment: string;
+  Rating: number;
+  Comment: string;
 }
 
 interface Recipe {
@@ -31,7 +31,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
   const [savedRecipes, setSavedRecipes] = useState<number[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const selectedRecipeRef = useRef<HTMLDivElement | null>(null);
-  const [review, setReview] = useState<Review>({ rating: 0, comment: "" });
+  const [review, setReview] = useState<Review>({ Rating: 0, Comment: "" });
   const [message, setMessage] = useState<string>("Loading...");
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -69,14 +69,26 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
     setSelectedRecipe((prevRecipe) =>
       prevRecipe?.Recipe_ID === recipe.Recipe_ID ? null : recipe
     );
-
+  
     if (recipe.Recipe_ID !== selectedRecipe?.Recipe_ID) {
       try {
-        const response = await fetch(`/recipe-reviews/${recipe.Recipe_ID}`);
+        console.log(recipe.Recipe_ID);
+        const response = await fetch('/recipe-reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ recipeId: recipe.Recipe_ID })
+        });
+  
+        console.log(response);
         if (!response.ok) {
           throw new Error("Failed to fetch recipe reviews");
         }
+  
         const data = await response.json();
+        console.log(data);
+  
         setSelectedRecipe((prevRecipe) =>
           prevRecipe ? { ...prevRecipe, Reviews: data } : null
         );
@@ -85,6 +97,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       }
     }
   };
+  
 
   const handleSaveRecipe = async (recipeId: number) => {
     try {
@@ -138,42 +151,49 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
 
   const handleLeaveReview = async (recipeId: number) => {
     try {
-      const body = JSON.stringify({ email, recipeId, ...review });
+      const body = { email, recipeId, ...review }; // Create the request body as an object
+  
       console.log("Sending request to /leave-review with body:", body);
-
+  
       const response = await fetch("/leave-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body,
+        body: JSON.stringify(body), // JSON stringify here, since the body needs to be JSON
       });
-
-      console.log(`Response status: ${response.status}`);
-      const responseData = await response.text();
-      console.log(`Response data: ${responseData}`);
-
+  
       if (!response.ok) {
         throw new Error("Failed to submit review");
       }
-
+  
+      // After the review is submitted, fetch the updated reviews for this recipe
+      const reviewsResponse = await fetch("/recipe-reviews", {
+        method: "POST", // You can adjust this to GET if you prefer
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId }), // Send the recipeId as a JSON stringified object
+      });
+  
+      if (!reviewsResponse.ok) {
+        throw new Error("Failed to fetch recipe reviews");
+      }
+  
+      const reviews = await reviewsResponse.json(); // Parse the reviews as JSON
+      console.log("Fetched reviews:", reviews);
+  
+      // Update the selected recipe with the fetched reviews
       setRecipes((prevRecipes) =>
         prevRecipes.map((recipe) =>
           recipe.Recipe_ID === recipeId
-            ? {
-                ...recipe,
-                Reviews: [
-                  ...recipe.Reviews,
-                  { rating: review.rating, comment: review.comment },
-                ],
-              }
+            ? { ...recipe, Reviews: reviews }
             : recipe
         )
       );
-
+  
       alert("Review submitted successfully");
     } catch (error) {
       console.error("Error submitting review:", error);
     }
   };
+    
 
   if (loading) {
     return <div>Loading...</div>;
@@ -254,22 +274,22 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                 <ul>
                   {(selectedRecipe.Reviews || []).map((review, index) => (
                     <li key={index}>
-                      {review.comment} (Rating: {review.rating})
+                      {review.Comment} (Rating: {review.Rating})
                     </li>
                   ))}
                 </ul>
                 <textarea
-                  value={review.comment}
+                  value={review.Comment}
                   onChange={(e) =>
-                    setReview({ ...review, comment: e.target.value })
+                    setReview({ ...review, Comment: e.target.value })
                   }
                   placeholder="Leave a comment"
                 />
                 <input
                   type="number"
-                  value={review.rating}
+                  value={review.Rating}
                   onChange={(e) =>
-                    setReview({ ...review, rating: parseInt(e.target.value) })
+                    setReview({ ...review, Rating: parseInt(e.target.value) })
                   }
                   min="1"
                   max="5"

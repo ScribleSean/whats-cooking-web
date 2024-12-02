@@ -52,7 +52,9 @@ const getRecipeReviews = async (recipeId: number): Promise<RowDataPacket[]> => {
       FROM User_Review
       WHERE Recipe_ID = ?
     `;
+    // console.log(query)
     const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
+    // console.log(rows);
     return rows;
   } catch (error) {
     console.error('Error fetching recipe reviews:', error);
@@ -411,16 +413,35 @@ app.get('/recipe-ratings', async (req: Request, res: Response) => {
 });
 
 // Fetch reviews for each recipe
-app.get('/recipe-reviews/:recipeId', async (req: Request, res: Response) => {
-  const { recipeId } = req.params;
+app.post('/recipe-reviews', async (req: Request, res: Response) => {
+  const { recipeId } = req.body; // Assuming you're sending recipeId in the body as part of the request
+  
+  console.log('Received recipeId:', recipeId);
+
+  if (!recipeId) {
+    return res.status(400).json({ error: 'Recipe ID is required' });
+  }
+
   try {
-    const reviews = await getRecipeReviews(Number(recipeId));
-    res.status(200).json(reviews);
+    // Adjust the query to use the recipeId dynamically
+    const query = `
+      SELECT Email, Rating, Comment
+      FROM User_Review
+      WHERE Recipe_ID = ?
+    `;
+    
+    // Execute the query with the recipeId
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [recipeId]);
+    
+    // Send the reviews back as the response
+    res.status(200).json(rows);
   } catch (error) {
     console.error('Error fetching recipe reviews:', error);
     res.status(500).json({ error: 'Failed to fetch recipe reviews' });
   }
 });
+
+
 
 app.get('/recipes', async (req: Request, res: Response) => {
   try {
