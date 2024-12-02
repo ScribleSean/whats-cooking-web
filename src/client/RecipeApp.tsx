@@ -36,20 +36,6 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchSavedRecipes = async () => {
-      try {
-        const response = await fetch(`/user-profile/${email}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch user profile");
-        }
-        const data = await response.json();
-        const savedRecipeIds = data.map((recipe: Recipe) => recipe.Recipe_ID);
-        setSavedRecipes(savedRecipeIds);
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
-    };
-
     const fetchRecipes = async () => {
       try {
         const response = await fetch("/recipes");
@@ -71,51 +57,8 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       }
     };
 
-    const fetchRecipeSaves = async () => {
-      try {
-        const response = await fetch("/recipe-saves");
-        if (!response.ok) {
-          throw new Error("Failed to fetch recipe saves");
-        }
-        const data = await response.json();
-        setRecipes((prevRecipes) =>
-          prevRecipes.map((recipe) => ({
-            ...recipe,
-            Saves:
-              data.find((item: any) => item.Recipe_ID === recipe.Recipe_ID)
-                ?.Saves || 0,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching recipe saves:", error);
-      }
-    };
-
-    const fetchRecipeRatings = async () => {
-      try {
-        const response = await fetch("/recipe-ratings");
-        if (!response.ok) {
-          throw new Error("Failed to fetch recipe ratings");
-        }
-        const data = await response.json();
-        setRecipes((prevRecipes) =>
-          prevRecipes.map((recipe) => ({
-            ...recipe,
-            Average_Rating:
-              data.find((item: any) => item.Recipe_ID === recipe.Recipe_ID)
-                ?.Average_Rating || 0,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching recipe ratings:", error);
-      }
-    };
-
     const fetchData = async () => {
-      await fetchSavedRecipes();
       await fetchRecipes();
-      await fetchRecipeSaves();
-      await fetchRecipeRatings();
       setLoading(false);
     };
 
@@ -267,9 +210,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                     ? "Unsave Recipe"
                     : "Save Recipe"}
                 </button>
-                <small>
-                  Calories: {recipe.Calories}
-                </small>
+                <small>Calories: {recipe.Calories}</small>
               </div>
             ))}
           </div>
@@ -310,16 +251,13 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                     step.trim() ? <p key={index}>{step.trim()}</p> : null
                 )}
                 <h4 className="mt-4">Reviews:</h4>
-                {selectedRecipe.Reviews?.map((review, index) => (
-                  <div key={index}>
-                    <p>
-                      <strong>Rating:</strong> {review.rating}
-                    </p>
-                    <p>
-                      <strong>Comment:</strong> {review.comment}
-                    </p>
-                  </div>
-                ))}
+                <ul>
+                  {(selectedRecipe.Reviews || []).map((review, index) => (
+                    <li key={index}>
+                      {review.comment} (Rating: {review.rating})
+                    </li>
+                  ))}
+                </ul>
                 <textarea
                   value={review.comment}
                   onChange={(e) =>

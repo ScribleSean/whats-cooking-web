@@ -445,7 +445,8 @@ app.get('/recipes', async (req: Request, res: Response) => {
           Servings: row.Servings,
           Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
           Ingredients: [],
-          Directions: row.Directions
+          Directions: row.Directions,
+          Reviews: []
         };
       }
       acc[recipeId].Ingredients.push({
@@ -455,6 +456,12 @@ app.get('/recipes', async (req: Request, res: Response) => {
       });
       return acc;
     }, {});
+
+    // Fetch reviews for each recipe
+    for (const recipeId in recipes) {
+      const reviews = await getRecipeReviews(Number(recipeId));
+      recipes[recipeId].Reviews = reviews;
+    }
 
     res.status(200).json(Object.values(recipes));
   } catch (error) {
