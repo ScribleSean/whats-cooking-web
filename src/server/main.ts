@@ -359,7 +359,7 @@ app.post('/leave-review', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/created-recipes', async (req: Request, res: Response) => {
+app.post('/user-created-recipes', async (req: Request, res: Response) => {
   const { email } = req.body;
 
   console.log('Received email:', email);

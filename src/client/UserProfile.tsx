@@ -33,7 +33,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
   useEffect(() => {
     const fetchCreatedRecipes = async () => {
       try {
-        const response = await fetch("/created-recipes", {
+        const response = await fetch("/user-created-recipes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
@@ -110,6 +110,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
     <div className="container mt-4">
       <h1 className="text-center mb-4">User Profile</h1>
 
+      <h2>Created Recipes</h2>
+      {createdRecipes.length === 0 ? (
+        <div>No recipes created by this user.</div>
+      ) : (
+        <div className="list-group">
+          {createdRecipes.map((recipe) => (
+            <div key={recipe.Recipe_ID} className="list-group-item">
+              <h5 className="mb-1">{recipe.Recipe_Name}</h5>
+              <small>Calories: {recipe.Calories}</small>
+            </div>
+          ))}
+        </div>
+      )}
       <h2>Saved Recipes</h2>
       {savedRecipes.length === 0 ? (
         <div>No recipes saved by this user.</div>
