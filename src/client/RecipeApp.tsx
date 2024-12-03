@@ -499,7 +499,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                   {selectedRecipe.Ingredients.map((ingredient, index) => (
                     <li key={index}>
                       {ingredient.Quantity} {ingredient.Unit}{" "}
-                      {ingredient.Ingredient_Name}
+                      {ingredient.Ingredient_Name == "None" ? "" : ingredient.Ingredient_Name}
                     </li>
                   ))}
                 </ul>
