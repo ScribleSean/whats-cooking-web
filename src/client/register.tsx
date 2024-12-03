@@ -92,7 +92,7 @@ const Register: React.FC<RegisterProps> = ({onRegister}) => {
                         </form>
                     </div>
                     <div className="card-footer">
-                        <a href="#" className='card-link'>Login Here</a>
+                        <a href="/" className='card-link'>Login Here</a>
                     </div>
                 </div>
             </div>
