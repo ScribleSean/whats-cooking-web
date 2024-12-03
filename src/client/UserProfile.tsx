@@ -113,14 +113,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete recipe");
+        throw new Error(
+          "Cannot delete a high-quality recipe with an average rating over 4.0."
+        );
       }
 
       setCreatedRecipes((prevRecipes) =>
         prevRecipes.filter((recipe) => recipe.Recipe_ID !== recipeId)
       );
     } catch (err) {
-      alert("Failed to delete recipe");
+      alert(
+        "Cannot delete a high-quality recipe with an average rating over 4.0."
+      );
     }
   };
 
