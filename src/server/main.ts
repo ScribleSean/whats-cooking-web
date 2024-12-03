@@ -384,9 +384,8 @@ app.post('/user-profile', async (req: Request, res: Response) => {
 app.get('/recipe-saves', async (req: Request, res: Response) => {
   try {
     const query = `
-      SELECT Recipe_ID, COUNT(*) AS Saves
-      FROM User_Saved_Recipe
-      GROUP BY Recipe_ID
+      SELECT Recipe_ID, Number_Of_Saves AS Saves
+      FROM Recipe
     `;
     const [rows] = await pool.query<RowDataPacket[]>(query);
     res.status(200).json(rows);
@@ -396,15 +395,23 @@ app.get('/recipe-saves', async (req: Request, res: Response) => {
   }
 });
 
-// Fetch average rating for each recipe
-app.get('/recipe-ratings', async (req: Request, res: Response) => {
+
+app.post('/recipe-saves-for-specific-recipe', async (req: Request, res: Response) => {
+  const { recipeId } = req.body; 
+  
+  console.log('Received recipeId:', recipeId);
+
+  if (!recipeId) {
+    return res.status(400).json({ error: 'Recipe ID is required' });
+  }
+
   try {
     const query = `
-      SELECT Recipe_ID, AVG(Rating) AS Average_Rating
-      FROM User_Review
-      GROUP BY Recipe_ID
+      SELECT Recipe_ID, Number_Of_Saves AS Saves
+      FROM Recipe
+      WHERE Recipe_ID = ?
     `;
-    const [rows] = await pool.query<RowDataPacket[]>(query);
+    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
     res.status(200).json(rows);
   } catch (error) {
     console.error('Error fetching recipe ratings:', error);
@@ -412,8 +419,88 @@ app.get('/recipe-ratings', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/recipe-saved-ids-for-specific-user', async (req: Request, res: Response) => {
+  const { email } = req.body; 
+  
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT Recipe_ID
+      FROM User_Saved_Recipe
+      WHERE Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    const savedRecipeIDs = rows.map((row) => row.Recipe_ID)
+    res.status(200).json(savedRecipeIDs);
+  } catch (error) {
+    console.error('Error fetching recipe ratings:', error);
+    res.status(500).json({ error: 'Failed to fetch saved recipe IDs' });
+  }
+});
+
+
+// Fetch total number of saves for each recipe
+app.get('/recipe-ratings', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT Recipe_ID, Number_Of_Saves AS Saves
+      FROM Recipe
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe saves:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe saves' });
+  }
+});
+
+
+
+// Fetch average rating for each recipe
+app.post('/recipe-ratings-for-specific-recipe', async (req: Request, res: Response) => {
+  const { recipeId } = req.body; 
+  
+  console.log('Received recipeId:', recipeId);
+
+  if (!recipeId) {
+    return res.status(400).json({ error: 'Recipe ID is required' });
+  }
+
+  try {
+    const query = `
+      SELECT Recipe_ID, Average_Rating
+      FROM Recipe
+      WHERE Recipe_ID = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe ratings:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe ratings' });
+  }
+});
+
+app.get('/recipe-reviews', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT Email, Rating, Comment
+      FROM User_Review
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe saves:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe saves' });
+  }
+});
+
 // Fetch reviews for each recipe
-app.post('/recipe-reviews', async (req: Request, res: Response) => {
+app.post('/recipe-reviews-for-specific-recipe', async (req: Request, res: Response) => {
   const { recipeId } = req.body; // Assuming you're sending recipeId in the body as part of the request
   
   console.log('Received recipeId:', recipeId);
