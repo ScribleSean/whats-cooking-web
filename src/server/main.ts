@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import { RowDataPacket } from 'mysql2'
-import { ResultSetHeader } from 'mysql2';
 import ViteExpress from "vite-express";
 import cors from 'cors';
 import pool from './db';
@@ -44,6 +43,23 @@ const getUnitNames = async (): Promise<UnitName[]> => {
     console.error("Error fetching ingredient names:", error);
     throw error;
 }
+};
+
+const getRecipeReviews = async (recipeId: number): Promise<RowDataPacket[]> => {
+  try {
+    const query = `
+      SELECT Email, Rating, Comment
+      FROM User_Review
+      WHERE Recipe_ID = ?
+    `;
+    // console.log(query)
+    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
+    // console.log(rows);
+    return rows;
+  } catch (error) {
+    console.error('Error fetching recipe reviews:', error);
+    throw error;
+  }
 };
 
 
@@ -157,20 +173,20 @@ app.post('/login', async (req: Request, res: Response) => {
 app.post('/newuser', async (req: Request, res: Response) => {
 	try {
 		const { username, password } = req.body;
-		const [user] = await pool.query<ResultSetHeader>('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
-		if (!user) {
-			return res.json({
-				success: false,
-				message: 'Failed to create.'
-			});
-		}
+    const [result] = await pool.execute('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
+    if (!result) {
+      return res.json({
+        success: false,
+        message: 'Failed to create.'
+      });
+    }
 
-		if (user.affectedRows != 1) {
-			return res.json({
-				success: false,
-				message: 'Error; modified too many rows.'
-			});
-		}
+    if ((result as any).affectedRows != 1) {
+      return res.json({
+        success: false,
+        message: 'Error; modified too many rows.'
+      });
+    }
 		
 		res.json({
 			success: true,
@@ -269,6 +285,371 @@ app.post('/insert-recipe-content', async (req, res) => {
   } catch (err) {
     console.error('Error inserting data into Recipe_Content:', err); // Log the error to the console
     res.status(500).send('Error inserting data');
+  }
+});
+// Save recipe
+app.post('/save-recipe', async (req: Request, res: Response) => {
+  const { email, recipeId } = req.body;
+
+  console.log('Received request to save recipe:', { email, recipeId });
+
+  if (!email || !recipeId) {
+    console.error('Email and Recipe ID are required');
+    return res.status(400).send('Email and Recipe ID are required');
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO User_Saved_Recipe (Email, Recipe_ID)
+      VALUES (?, ?)
+    `, [email, recipeId]);
+
+    res.status(200).send('Recipe saved successfully');
+  } catch (err) {
+    console.error('Error saving recipe:', err);
+    res.status(500).send('Failed to save recipe');
+  }
+});
+
+// Unsave recipe
+app.post('/unsave-recipe', async (req: Request, res: Response) => {
+  const { email, recipeId } = req.body;
+
+  console.log('Received request to unsave recipe:', { email, recipeId });
+
+  if (!email || !recipeId) {
+    console.error('Email and Recipe ID are required');
+    return res.status(400).send('Email and Recipe ID are required');
+  }
+
+  try {
+    await pool.query(`
+      DELETE FROM User_Saved_Recipe
+      WHERE Email = ? AND Recipe_ID = ?
+    `, [email, recipeId]);
+
+    res.status(200).send('Recipe unsaved successfully');
+  } catch (err) {
+    console.error('Error unsaving recipe:', err);
+    res.status(500).send('Failed to unsave recipe');
+  }
+});
+
+// Leave a review
+app.post('/leave-review', async (req: Request, res: Response) => {
+  const { email, recipeId, Rating, Comment } = req.body;
+
+  console.log('Received request to leave review:', { email, recipeId, Rating, Comment });
+
+  if (!email || !recipeId || !Rating || !Comment) {
+    console.error('Email, Recipe ID, Rating, and Comment are required');
+    return res.status(400).send('Email, Recipe ID, Rating, and Comment are required');
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO User_Review (Email, Recipe_ID, Rating, Comment)
+      VALUES (?, ?, ?, ?)
+    `, [email, recipeId, Rating, Comment]);
+
+    res.status(200).send('Review submitted successfully');
+  } catch (err) {
+    console.error('Error submitting review:', err);
+    res.status(500).send('Failed to submit review');
+  }
+});
+
+app.post('/user-created-recipes', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT * FROM Recipe
+      WHERE Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching created recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch created recipes' });
+  }
+});
+
+app.post('/saved-recipes', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT r.* FROM Recipe r
+      JOIN User_Saved_Recipe usr ON r.Recipe_ID = usr.Recipe_ID
+      WHERE usr.Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching saved recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch saved recipes' });
+  }
+});
+
+app.post('/user-reviews', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT r.Recipe_Name, ur.Rating, ur.Comment FROM User_Review ur
+      JOIN Recipe r ON ur.Recipe_ID = r.Recipe_ID
+      WHERE ur.Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    res.status(500).json({ error: 'Failed to fetch user reviews' });
+  }
+});
+
+// Fetch total number of saves for each recipe
+app.get('/recipe-saves', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT Recipe_ID, Number_Of_Saves AS Saves
+      FROM Recipe
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe saves:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe saves' });
+  }
+});
+
+
+app.post('/recipe-saves-for-specific-recipe', async (req: Request, res: Response) => {
+  const { recipeId } = req.body; 
+  
+  console.log('Received recipeId:', recipeId);
+
+  if (!recipeId) {
+    return res.status(400).json({ error: 'Recipe ID is required' });
+  }
+
+  try {
+    const query = `
+      SELECT Recipe_ID, Number_Of_Saves AS Saves
+      FROM Recipe
+      WHERE Recipe_ID = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe ratings:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe ratings' });
+  }
+});
+
+app.post('/recipe-saved-ids-for-specific-user', async (req: Request, res: Response) => {
+  const { email } = req.body; 
+  
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT Recipe_ID
+      FROM User_Saved_Recipe
+      WHERE Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    const savedRecipeIDs = rows.map((row) => row.Recipe_ID)
+    res.status(200).json(savedRecipeIDs);
+  } catch (error) {
+    console.error('Error fetching recipe ratings:', error);
+    res.status(500).json({ error: 'Failed to fetch saved recipe IDs' });
+  }
+});
+
+
+// Fetch total number of saves for each recipe
+app.get('/recipe-ratings', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT Recipe_ID, Number_Of_Saves AS Saves
+      FROM Recipe
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe saves:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe saves' });
+  }
+});
+
+
+
+// Fetch average rating for each recipe
+app.post('/recipe-ratings-for-specific-recipe', async (req: Request, res: Response) => {
+  const { recipeId } = req.body; 
+  
+  console.log('Received recipeId:', recipeId);
+
+  if (!recipeId) {
+    return res.status(400).json({ error: 'Recipe ID is required' });
+  }
+
+  try {
+    const query = `
+      SELECT Recipe_ID, Average_Rating
+      FROM Recipe
+      WHERE Recipe_ID = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe ratings:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe ratings' });
+  }
+});
+
+app.get('/recipe-reviews', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT Email, Rating, Comment
+      FROM User_Review
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe saves:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe saves' });
+  }
+});
+
+// Fetch reviews for each recipe
+app.post('/recipe-reviews-for-specific-recipe', async (req: Request, res: Response) => {
+  const { recipeId } = req.body; // Assuming you're sending recipeId in the body as part of the request
+  
+  console.log('Received recipeId:', recipeId);
+
+  if (!recipeId) {
+    return res.status(400).json({ error: 'Recipe ID is required' });
+  }
+
+  try {
+    // Adjust the query to use the recipeId dynamically
+    const query = `
+      SELECT Email, Rating, Comment
+      FROM User_Review
+      WHERE Recipe_ID = ?
+    `;
+    
+    // Execute the query with the recipeId
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [recipeId]);
+    
+    // Send the reviews back as the response
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching recipe reviews:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe reviews' });
+  }
+});
+
+
+
+app.get('/recipes', async (req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings,
+             i.Ingredient_Name, rc.Quantity, rc.Unit, r.Directions
+      FROM Recipe r
+      JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
+      JOIN Ingredient i ON rc.Ingredient_ID = i.Ingredient_ID
+    `;
+    
+    const [rows] = await pool.query<RowDataPacket[]>(query);
+    const recipes = rows.reduce((acc: any, row: any) => {
+      const recipeId = row.Recipe_ID;
+      if (!acc[recipeId]) {
+        acc[recipeId] = {
+          Recipe_ID: recipeId,
+          Recipe_Name: row.Recipe_Name,
+          Prep_Time: row.Prep_Time,
+          Cook_Time: row.Cook_Time,
+          Calories: row.Calories,
+          Servings: row.Servings,
+          Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
+          Ingredients: [],
+          Directions: row.Directions,
+          Reviews: []
+        };
+      }
+      acc[recipeId].Ingredients.push({
+        Ingredient_Name: row.Ingredient_Name,
+        Quantity: row.Quantity,
+        Unit: row.Unit
+      });
+      return acc;
+    }, {});
+
+    // Fetch reviews for each recipe
+    for (const recipeId in recipes) {
+      const reviews = await getRecipeReviews(Number(recipeId));
+      recipes[recipeId].Reviews = reviews;
+    }
+
+    res.status(200).json(Object.values(recipes));
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch recipes' });
+  }
+});
+
+app.delete('/delete-recipe', async (req: Request, res: Response) => {
+  const { email, recipeId } = req.body;
+
+  console.log('Received request to delete recipe:', { email, recipeId });
+
+  if (!email || !recipeId) {
+    console.error('Email and Recipe ID are required');
+    return res.status(400).send('Email and Recipe ID are required');
+  }
+
+  try {
+    const query = `
+      DELETE FROM Recipe
+      WHERE Recipe_ID = ? AND Email = ?
+    `;
+    const [result] = await pool.query(query, [recipeId, email]);
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).send('Recipe not found or you do not have permission to delete this recipe');
+    }
+
+    res.status(200).send('Recipe deleted successfully');
+  } catch (err) {
+    console.error('Error deleting recipe:', err);
+    res.status(500).send('Failed to delete recipe');
   }
 });
 
