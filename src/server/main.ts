@@ -23,6 +23,107 @@ interface UnitName extends RowDataPacket {
   Unit: string;
 }
 
+interface TopRated extends RowDataPacket {
+  Recipe_ID: number;
+  Recipe_Name: string;
+  Average_Rating: number;
+}
+
+const getTopRatedrecipes = async (): Promise<TopRated[]> => {
+  try {
+      const [rows] = await pool.query<TopRated[]>("SELECT * FROM top_10_recipes_by_average_rating");
+      // console.log(rows);
+      return rows as TopRated[];
+  } catch (error) {
+      console.error("Error fetching top 10 highest rated recipes ", error);
+      throw error;
+  }
+};
+
+app.get('/top-rated-recipes', async (req: Request, res: Response) => {
+  try {
+      const topRatedRecipes = await getTopRatedrecipes();
+      res.status(200).json(topRatedRecipes.map((row) => ({
+        Recipe_ID: row.Recipe_ID,
+        Recipe_Name: row.Recipe_Name,
+        Average_Rating: row.Average_Rating
+    })));
+    
+      // console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching most saved recipes:', error);
+      res.status(500).json({ error: 'Failed to fetch most saved recipes' });
+  }
+});
+
+
+interface MostSaved extends RowDataPacket {
+  Recipe_ID: number;
+  Recipe_Name: string;
+  Number_Of_Saves: number;
+}
+
+const getMostSavedrecipes = async (): Promise<MostSaved[]> => {
+  try {
+      const [rows] = await pool.query<MostSaved[]>("SELECT * FROM top_10_recipes_by_number_of_saves");
+      // console.log(rows);
+      return rows as MostSaved[];
+  } catch (error) {
+      console.error("Error fetching top 10 most saved recipes ", error);
+      throw error;
+  }
+};
+
+app.get('/most-saved-recipes', async (req: Request, res: Response) => {
+  try {
+      const mostSavedRecipes = await getMostSavedrecipes();
+      res.status(200).json(mostSavedRecipes.map((row) => ({
+        Recipe_ID: row.Recipe_ID,
+        Recipe_Name: row.Recipe_Name,
+        Number_Of_Saves: row.Number_Of_Saves
+    })));
+    
+      // console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching most saved recipes:', error);
+      res.status(500).json({ error: 'Failed to fetch most saved recipes' });
+  }
+});
+
+
+interface Healthiest extends RowDataPacket {
+  Recipe_ID: number;
+  Recipe_Name: string;
+  Calories: number;
+}
+
+const getHealthiestRecipes = async (): Promise<Healthiest[]> => {
+  try {
+      const [rows] = await pool.query<Healthiest[]>("SELECT * FROM top_10_healthiest_recipes");
+      // console.log(rows);
+      return rows as Healthiest[];
+  } catch (error) {
+      console.error("Error fetching top 10 recipes by lowest amount of calories ", error);
+      throw error;
+  }
+};
+
+app.get('/healthiest-recipes', async (req: Request, res: Response) => {
+  try {
+      const healthiestRecipes = await getHealthiestRecipes();
+      res.status(200).json(healthiestRecipes.map((row) => ({
+        Recipe_ID: row.Recipe_ID,
+        Recipe_Name: row.Recipe_Name,
+        Calories: row.Calories
+    })));
+    
+      // console.log("Names of the ingredients", ingredientNames);
+  } catch (error) {
+      console.error('Error fetching most saved recipes:', error);
+      res.status(500).json({ error: 'Failed to fetch most saved recipes' });
+  }
+});
+
 const getIngredientNames = async (): Promise<DefaultIngredientName[]> => {
   try {
       const [rows] = await pool.query<DefaultIngredientName[]>("SELECT DISTINCT Ingredient_Name FROM Ingredient ORDER BY Ingredient_Name ASC");

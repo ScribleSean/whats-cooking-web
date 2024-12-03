@@ -12,6 +12,7 @@ import {
   Link,
 } from "react-router-dom";
 import RecipeBuilder from "./RecipeBuilder";
+import TopRecipes from "./toprecipes";
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -39,6 +40,11 @@ const App: React.FC = () => {
               Profile
             </Link>
           )}
+
+          
+          <Link className="navbar-nav text-warning mx-2" to="/toprecipes">
+            Top 10 Recipes By Statistics
+          </Link>
         </nav>
 
         <Routes>
@@ -64,6 +70,16 @@ const App: React.FC = () => {
             element={
               isLoggedIn ? (
                 <RecipeBuilder email={userEmail} />
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+          <Route
+            path="/toprecipes"
+            element={
+              isLoggedIn ? (
+                <TopRecipes email = {userEmail}/>
               ) : (
                 <Navigate to="/" />
               )
