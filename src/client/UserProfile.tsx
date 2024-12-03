@@ -31,9 +31,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const url = `/user-profile/${email}`;
-        console.log(`Fetching user profile from URL: ${url}`);
-        const response = await fetch(url);
+        // const url = `/user-profile/${email}`;
+        // console.log(`Fetching user profile from URL: ${url}`);
+        const response = await fetch('/user-profile', {
+          method: 'POST',
+          headers: {  
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ Email : email })
+        });
+        console.log(response)
         if (!response.ok) {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }

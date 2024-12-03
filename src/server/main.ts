@@ -360,8 +360,8 @@ app.post('/leave-review', async (req: Request, res: Response) => {
 });
 
 // Fetch user profile
-app.get('/user-profile/:email', async (req: Request, res: Response) => {
-  const { email } = req.params;
+app.post('/user-profile', async (req: Request, res: Response) => {
+  const { Email } = req.body;
   try {
     const query = `
       SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings, r.Directions,
@@ -372,7 +372,7 @@ app.get('/user-profile/:email', async (req: Request, res: Response) => {
       FROM Recipe r
       WHERE r.Email = ?
     `;
-    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [Email]);
     res.status(200).json(rows);
   } catch (error) {
     console.error('Error fetching user profile:', error);
