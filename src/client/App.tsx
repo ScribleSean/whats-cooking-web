@@ -61,7 +61,7 @@ const App: React.FC = () => {
           <Route path="/register" element={<Register />} />
           <Route
             path="/recipebuilder"
-            element={isLoggedIn ? <RecipeBuilder /> : <Navigate to="/" />}
+            element={isLoggedIn ? <RecipeBuilder email = {userEmail} /> : <Navigate to="/" />}
           />
           <Route
             path="/profile"

@@ -163,7 +163,8 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
                             throw new Error(`Failed to fetch data: ${response.statusText}`);
                         }
                     }
-                    catch (error) {
+                    catch (error: any) {
+
                         console.error(error);
                     }
                 }
@@ -174,6 +175,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
         }
         catch (error) {
             console.error(error);
+            alert("Cannot create a recipe with an already existing name.");
         }
     }
         
