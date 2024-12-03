@@ -29,7 +29,7 @@ const App: React.FC = () => {
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
           {/* Navbar brand */}
           <Link className="navbar-brand mx-2" to="/">
-            RecipeApp
+            What's Cooking?
           </Link>
           {/* Recipe Builder link with Bootstrap utility class for orange text */}
           <Link className="navbar-nav text-warning mx-2" to="/recipebuilder">
