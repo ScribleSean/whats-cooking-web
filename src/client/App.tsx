@@ -27,15 +27,15 @@ const App: React.FC = () => {
       <div className="container">
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
           {/* Navbar brand */}
-          <Link className="navbar-brand" to="/">
+          <Link className="navbar-brand mx-2" to="/">
             RecipeApp
           </Link>
           {/* Recipe Builder link with Bootstrap utility class for orange text */}
-          <Link className="navbar-nav text-warning" to="/recipebuilder">
+          <Link className="navbar-nav text-warning mx-2" to="/recipebuilder">
             Recipe Builder
           </Link>
           {isLoggedIn && (
-            <Link className="navbar-nav text-warning" to="/profile">
+            <Link className="navbar-nav text-warning mx-2" to="/profile">
               Profile
             </Link>
           )}
@@ -61,7 +61,13 @@ const App: React.FC = () => {
           <Route path="/register" element={<Register />} />
           <Route
             path="/recipebuilder"
-            element={isLoggedIn ? <RecipeBuilder email = {userEmail} /> : <Navigate to="/" />}
+            element={
+              isLoggedIn ? (
+                <RecipeBuilder email={userEmail} />
+              ) : (
+                <Navigate to="/" />
+              )
+            }
           />
           <Route
             path="/profile"
