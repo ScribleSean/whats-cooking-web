@@ -234,7 +234,7 @@ const fetchSaveCount = async (recipe: Recipe) => {
       }
   
       // After the review is submitted, fetch the updated reviews for this recipe
-      const reviewsResponse = await fetch("/recipe-reviews", {
+      const reviewsResponse = await fetch("/recipe-reviews-for-specific-recipe", {
         method: "POST", // You can adjust this to GET if you prefer
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipeId }), // Send the recipeId as a JSON stringified object
