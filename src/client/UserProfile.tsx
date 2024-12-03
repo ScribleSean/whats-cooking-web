@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import Swal from "sweetalert2";
 
 interface Review {
   Rating: number;
@@ -121,10 +122,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
       setCreatedRecipes((prevRecipes) =>
         prevRecipes.filter((recipe) => recipe.Recipe_ID !== recipeId)
       );
+      Swal.fire({
+        title: "Recipe Deleted",
+        text: "The recipe has been deleted successfully!",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
     } catch (err) {
-      alert(
-        "Cannot delete a high-quality recipe with an average rating over 4.0."
-      );
+      Swal.fire({
+        title: "Error",
+        text: "Cannot delete a high-quality recipe with an average rating over 4.0.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     }
   };
 
