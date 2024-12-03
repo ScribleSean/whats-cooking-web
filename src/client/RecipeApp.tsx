@@ -36,6 +36,13 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
   const [review, setReview] = useState<Review>({ Rating: 0, Comment: "" });
   const [message, setMessage] = useState<string>("Loading...");
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [calorieRange, setCalorieRange] = useState<[number, number]>([0, 1000]);
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+  const [ingredientQuery, setIngredientQuery] = useState<string>("");
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<string>("asc");
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -84,6 +91,46 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
 
     fetchData();
   }, [email]);
+
+   // Add Ingredient to the List
+   const handleAddIngredient = () => {
+    if (ingredientQuery.trim() && !selectedIngredients.includes(ingredientQuery.trim().toLowerCase())) {
+      setSelectedIngredients([...selectedIngredients, ingredientQuery.trim().toLowerCase()]);
+      setIngredientQuery("");
+    }
+  };
+
+  // Remove Ingredient from the List
+  const handleRemoveIngredient = (ingredient: string) => {
+    setSelectedIngredients(selectedIngredients.filter(item => item !== ingredient));
+  };
+
+  // Filter and Sort Logic
+  const filteredAndSortedRecipes = recipes
+    .filter(recipe => {
+      const matchesSearch = recipe.Recipe_Name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCalories =
+        recipe.Calories >= calorieRange[0] && recipe.Calories <= calorieRange[1];
+      const matchesRating = ratingFilter ? recipe.Average_Rating >= ratingFilter : true;
+      const matchesIngredients =
+        selectedIngredients.length === 0 ||
+        selectedIngredients.every(ingredient =>
+          recipe.Ingredients.some(i => i.Ingredient_Name.toLowerCase().includes(ingredient))
+        );
+      return matchesSearch && matchesCalories && matchesRating && matchesIngredients;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        return sortOrder === "asc"
+          ? a.Recipe_Name.localeCompare(b.Recipe_Name)
+          : b.Recipe_Name.localeCompare(a.Recipe_Name);
+      } else if (sortBy === "calories") {
+        return sortOrder === "asc" ? a.Calories - b.Calories : b.Calories - a.Calories;
+      } else if (sortBy === "rating") {
+        return sortOrder === "asc" ? a.Average_Rating - b.Average_Rating : b.Average_Rating - a.Average_Rating;
+      }
+      return 0;
+    });
 
   const handleRecipeClick = async (recipe: Recipe) => {
     // Check if recipe is already selected, if so, don't update
@@ -292,10 +339,107 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
     <div className="container mt-4">
       <h1 className="text-center mb-4">Recipes</h1>
       {message && <p className="text-danger">{message}</p>}
+  
+      {/* Filters and Sorting */}
+      <div className="mb-3">
+        {/* Search Bar */}
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Search recipes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+  
+        {/* Calorie Range */}
+        <label>Calories Range: {calorieRange[0]} - {calorieRange[1]}</label>
+        <div>
+          <input
+            type="range"
+            min="0"
+            max="2000"
+            value={calorieRange[0]}
+            onChange={(e) => setCalorieRange([Number(e.target.value), calorieRange[1]])}
+          />
+          <input
+            type="range"
+            min="0"
+            max="2000"
+            value={calorieRange[1]}
+            onChange={(e) => setCalorieRange([calorieRange[0], Number(e.target.value)])}
+          />
+        </div>
+  
+        {/* Rating Filter */}
+        <label>Minimum Rating:</label>
+        <select
+          className="form-select mb-2"
+          value={ratingFilter || ""}
+          onChange={(e) => setRatingFilter(Number(e.target.value) || null)}
+        >
+          <option value="">All Ratings</option>
+          <option value="1">1 Star</option>
+          <option value="2">2 Stars</option>
+          <option value="3">3 Stars</option>
+          <option value="4">4 Stars</option>
+          <option value="5">5 Stars</option>
+        </select>
+  
+        {/* Ingredient Filter */}
+        <div className="mb-3">
+          <label>Filter by Ingredients:</label>
+          <div className="d-flex">
+            <input
+              type="text"
+              className="form-control"
+              value={ingredientQuery}
+              onChange={(e) => setIngredientQuery(e.target.value)}
+            />
+            <button className="btn btn-primary ms-2" onClick={handleAddIngredient}>
+              Add
+            </button>
+          </div>
+          <div>
+            {selectedIngredients.map((ingredient, index) => (
+              <span
+                key={index}
+                className="badge bg-secondary me-2"
+                onClick={() => handleRemoveIngredient(ingredient)}
+              >
+                {ingredient} &times;
+              </span>
+            ))}
+          </div>
+        </div>
+  
+        {/* Sort By */}
+        <label>Sort By:</label>
+        <div className="d-flex">
+          <select
+            className="form-select me-2"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="name">Name</option>
+            <option value="calories">Calories</option>
+            <option value="rating">Rating</option>
+          </select>
+          <select
+            className="form-select"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+      </div>
+  
+      {/* Recipe List */}
       <div className="row">
         <div className="col-md-4">
           <div className="list-group">
-            {recipes.map((recipe) => (
+            {filteredAndSortedRecipes.map((recipe) => (
               <div
                 key={recipe.Recipe_ID}
                 onClick={() => handleRecipeClick(recipe)}
@@ -399,6 +543,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       </div>
     </div>
   );
+  
 };
 
 export default RecipeApp;
