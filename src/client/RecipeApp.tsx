@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Rating } from "@mui/material";
+import Swal from "sweetalert2";
 
 interface Ingredient {
   Ingredient_Name: string;
@@ -195,7 +196,12 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         }
 
         setSavedRecipes(savedRecipes.filter((id) => id !== recipeId));
-        alert("Recipe unsaved successfully");
+        Swal.fire({
+          title: "Recipe Unsaved",
+          text: "The recipe has been unsaved successfully!",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
       } else {
         console.log(`Saving recipe ID ${recipeId}.`);
 
@@ -211,7 +217,12 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         }
 
         setSavedRecipes([...savedRecipes, recipeId]);
-        alert("Recipe saved successfully");
+        Swal.fire({
+          title: "Recipe Saved",
+          text: "The recipe has been saved successfully!",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
       }
 
       // Fetch the updated number of saves after saving or unsaving the recipe
@@ -262,7 +273,12 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         )
       );
 
-      alert("Review submitted successfully");
+      Swal.fire({
+        title: "Review Submitted",
+        text: "Your review has been submitted successfully!",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
     } catch (error) {
       console.error("Error submitting review:", error);
     }
