@@ -625,6 +625,33 @@ app.get('/recipes', async (req: Request, res: Response) => {
   }
 });
 
+app.delete('/delete-recipe', async (req: Request, res: Response) => {
+  const { email, recipeId } = req.body;
+
+  console.log('Received request to delete recipe:', { email, recipeId });
+
+  if (!email || !recipeId) {
+    console.error('Email and Recipe ID are required');
+    return res.status(400).send('Email and Recipe ID are required');
+  }
+
+  try {
+    const query = `
+      DELETE FROM Recipe
+      WHERE Recipe_ID = ? AND Email = ?
+    `;
+    const [result] = await pool.query(query, [recipeId, email]);
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).send('Recipe not found or you do not have permission to delete this recipe');
+    }
+
+    res.status(200).send('Recipe deleted successfully');
+  } catch (err) {
+    console.error('Error deleting recipe:', err);
+    res.status(500).send('Failed to delete recipe');
+  }
+});
 
 ViteExpress.listen(app, 3000, () =>
   console.log("Server is listening on port 3000..."),

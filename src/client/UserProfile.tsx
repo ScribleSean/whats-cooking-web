@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Review {
   Rating: number;
@@ -102,6 +104,26 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
     fetchUserReviews();
   }, [email]);
 
+  const handleDeleteRecipe = async (recipeId: number) => {
+    try {
+      const response = await fetch("/delete-recipe", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, recipeId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete recipe");
+      }
+
+      setCreatedRecipes((prevRecipes) =>
+        prevRecipes.filter((recipe) => recipe.Recipe_ID !== recipeId)
+      );
+    } catch (err) {
+      alert("Failed to delete recipe");
+    }
+  };
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -116,9 +138,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
       ) : (
         <div className="list-group">
           {createdRecipes.map((recipe) => (
-            <div key={recipe.Recipe_ID} className="list-group-item">
-              <h5 className="mb-1">{recipe.Recipe_Name}</h5>
-              <small>Calories: {recipe.Calories}</small>
+            <div
+              key={recipe.Recipe_ID}
+              className="list-group-item d-flex justify-content-between align-items-center"
+            >
+              <div>
+                <h5 className="mb-1">{recipe.Recipe_Name}</h5>
+                <small>Calories: {recipe.Calories}</small>
+              </div>
+              <IconButton
+                onClick={() => handleDeleteRecipe(recipe.Recipe_ID)}
+                aria-label="delete"
+              >
+                <DeleteIcon />
+              </IconButton>
             </div>
           ))}
         </div>
