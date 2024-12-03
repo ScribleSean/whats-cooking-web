@@ -359,24 +359,71 @@ app.post('/leave-review', async (req: Request, res: Response) => {
   }
 });
 
-// Fetch user profile
-app.post('/user-profile', async (req: Request, res: Response) => {
-  const { Email } = req.body;
+app.post('/created-recipes', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
   try {
     const query = `
-      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings, r.Directions,
-             (SELECT COUNT(*) FROM User_Saved_Recipe usr WHERE usr.Recipe_ID = r.Recipe_ID) AS Saves,
-             (SELECT AVG(Rating) FROM User_Review ur WHERE ur.Recipe_ID = r.Recipe_ID) AS Average_Rating,
-             (SELECT JSON_ARRAYAGG(JSON_OBJECT('rating', ur.Rating, 'comment', ur.Comment)) 
-              FROM User_Review ur WHERE ur.Recipe_ID = r.Recipe_ID) AS Reviews
-      FROM Recipe r
-      WHERE r.Email = ?
+      SELECT * FROM Recipe
+      WHERE Email = ?
     `;
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [Email]);
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
     res.status(200).json(rows);
   } catch (error) {
-    console.error('Error fetching user profile:', error);
-    res.status(500).json({ error: 'Failed to fetch user profile' });
+    console.error('Error fetching created recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch created recipes' });
+  }
+});
+
+app.post('/saved-recipes', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT r.* FROM Recipe r
+      JOIN User_Saved_Recipe usr ON r.Recipe_ID = usr.Recipe_ID
+      WHERE usr.Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching saved recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch saved recipes' });
+  }
+});
+
+app.post('/user-reviews', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  console.log('Received email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const query = `
+      SELECT r.Recipe_Name, ur.Rating, ur.Comment FROM User_Review ur
+      JOIN Recipe r ON ur.Recipe_ID = r.Recipe_ID
+      WHERE ur.Email = ?
+    `;
+    const [rows] = await pool.query<RowDataPacket[]>(query, [email]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    res.status(500).json({ error: 'Failed to fetch user reviews' });
   }
 });
 

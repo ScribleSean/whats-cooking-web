@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
+interface Review {
+  Rating: number;
+  Comment: string;
+  Recipe_Name?: string; // Add Recipe_Name for user reviews
+}
+
 interface Recipe {
   Recipe_ID: number;
   Recipe_Name: string;
@@ -9,12 +15,9 @@ interface Recipe {
   Calories: number;
   Servings: number;
   Directions: string;
-}
-
-interface Review {
-  Recipe_Name: string;
-  Rating: number;
-  Comment: string;
+  Saves: number;
+  Average_Rating: number;
+  Reviews: Review[];
 }
 
 interface UserProfileProps {
@@ -22,73 +25,119 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ email }) => {
-  const [profile, setProfile] = useState<{
-    savedRecipes: Recipe[];
-    reviews: Review[];
-  }>({ savedRecipes: [], reviews: [] });
+  const [createdRecipes, setCreatedRecipes] = useState<Recipe[]>([]);
+  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchCreatedRecipes = async () => {
       try {
-        // const url = `/user-profile/${email}`;
-        // console.log(`Fetching user profile from URL: ${url}`);
-        const response = await fetch('/user-profile', {
-          method: 'POST',
-          headers: {  
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ Email : email })
+        const response = await fetch("/created-recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
         });
-        console.log(response)
         if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
+          throw new Error("Failed to fetch created recipes");
         }
         const data = await response.json();
-        console.log("Fetched user profile data:", data);
-        setProfile(data);
+        setCreatedRecipes(data || []);
       } catch (error) {
-        console.error("Error fetching user profile:", error);
-        setError("Failed to fetch user profile. Please try again later.");
+        console.error("Error fetching created recipes:", error);
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("An unknown error occurred");
+        }
       }
     };
 
-    fetchUserProfile();
+    const fetchSavedRecipes = async () => {
+      try {
+        const response = await fetch("/saved-recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch saved recipes");
+        }
+        const data = await response.json();
+        setSavedRecipes(data || []);
+      } catch (error) {
+        console.error("Error fetching saved recipes:", error);
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("An unknown error occurred");
+        }
+      }
+    };
+
+    const fetchUserReviews = async () => {
+      try {
+        const response = await fetch("/user-reviews", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch user reviews");
+        }
+        const data = await response.json();
+        setUserReviews(data || []);
+      } catch (error) {
+        console.error("Error fetching user reviews:", error);
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("An unknown error occurred");
+        }
+      }
+    };
+
+    fetchCreatedRecipes();
+    fetchSavedRecipes();
+    fetchUserReviews();
   }, [email]);
 
   if (error) {
-    return <div className="alert alert-danger">{error}</div>;
+    return <div>Error: {error}</div>;
   }
 
   return (
     <div className="container mt-4">
       <h1 className="text-center mb-4">User Profile</h1>
+
       <h2>Saved Recipes</h2>
-      <ul className="list-group">
-        {profile.savedRecipes.map((recipe) => (
-          <li key={recipe.Recipe_ID} className="list-group-item">
-            <h5>{recipe.Recipe_Name}</h5>
-            <p>Prep Time: {recipe.Prep_Time} mins</p>
-            <p>Cook Time: {recipe.Cook_Time} mins</p>
-            <p>Calories: {recipe.Calories}</p>
-            <p>Servings: {recipe.Servings}</p>
-            <h4>Directions:</h4>
-            {recipe.Directions.split(/Step \d+:/i).map((step, index) =>
-              step.trim() ? <p key={index}>{step.trim()}</p> : null
-            )}
-          </li>
-        ))}
-      </ul>
-      <h2 className="mt-4">Reviews</h2>
-      <ul className="list-group">
-        {profile.reviews.map((review, index) => (
-          <li key={index} className="list-group-item">
-            <h5>{review.Recipe_Name}</h5>
-            <p>Rating: {review.Rating} stars</p>
-            <p>{review.Comment}</p>
-          </li>
-        ))}
-      </ul>
+      {savedRecipes.length === 0 ? (
+        <div>No recipes saved by this user.</div>
+      ) : (
+        <div className="list-group">
+          {savedRecipes.map((recipe) => (
+            <div key={recipe.Recipe_ID} className="list-group-item">
+              <h5 className="mb-1">{recipe.Recipe_Name}</h5>
+              <small>Calories: {recipe.Calories}</small>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <h2>User Reviews</h2>
+      {userReviews.length === 0 ? (
+        <div>No reviews left by this user.</div>
+      ) : (
+        <div className="list-group">
+          {userReviews.map((review, index) => (
+            <div key={index} className="list-group-item">
+              <h5 className="mb-1">{review.Recipe_Name}</h5>
+              <small>Rating: {review.Rating}</small>
+              <p>{review.Comment}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
