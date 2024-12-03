@@ -55,9 +55,16 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         if (data.length === 0) {
           setMessage("No recipes available.");
         } else {
-          setRecipes(data);
+          setRecipes(
+            data.map((recipe) => ({
+              ...recipe,
+              Average_Rating: recipe.Average_Rating ?? 0, 
+            }))
+          );
           setMessage("");
         }
+
+
       } catch (err) {
         console.error("Error fetching from backend:", err);
         setMessage(
@@ -92,7 +99,6 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
     fetchData();
   }, [email]);
 
-   // Add Ingredient to the List
    const handleAddIngredient = () => {
     if (ingredientQuery.trim() && !selectedIngredients.includes(ingredientQuery.trim().toLowerCase())) {
       setSelectedIngredients([...selectedIngredients, ingredientQuery.trim().toLowerCase()]);
@@ -100,12 +106,51 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
     }
   };
 
-  // Remove Ingredient from the List
   const handleRemoveIngredient = (ingredient: string) => {
     setSelectedIngredients(selectedIngredients.filter(item => item !== ingredient));
   };
 
-  // Filter and Sort Logic
+  const testRecipes = [
+    { Recipe_ID: 1, Recipe_Name: "Pasta", Average_Rating: 4.5 },
+    { Recipe_ID: 2, Recipe_Name: "Pizza", Average_Rating: 3.2 },
+    { Recipe_ID: 3, Recipe_Name: "Salad", Average_Rating: 5.0 },
+    { Recipe_ID: 4, Recipe_Name: "Soup", Average_Rating: null },
+  ];
+  
+  const sortedTestRecipes = testRecipes.sort((a, b) => {
+    const ratingA = Number(a.Average_Rating) || 0; 
+    const ratingB = Number(b.Average_Rating) || 0;
+    return sortOrder === "asc" ? ratingA - ratingB : ratingB - ratingA;
+  });
+  console.log("Sorted test recipes:", sortedTestRecipes);
+  
+  console.log(
+    "Fetched recipes:",
+    recipes.map((recipe) => ({
+      id: recipe.Recipe_ID,
+      name: recipe.Recipe_Name,
+      rating: recipe.Average_Rating,
+    }))
+  );
+  
+  console.log("Inspecting recipes data:", recipes.map(r => ({
+    id: r.Recipe_ID,
+    name: r.Recipe_Name,
+    rating: r.Average_Rating,
+    type: typeof r.Average_Rating,
+  })));
+  
+  console.log(
+    "Recipes before sorting:",
+    recipes.map((r) => ({
+      id: r.Recipe_ID,
+      name: r.Recipe_Name,
+      rating: r.Average_Rating,
+      type: typeof r.Average_Rating,
+    }))
+  );
+  
+ 
   const filteredAndSortedRecipes = recipes
     .filter(recipe => {
       const matchesSearch = recipe.Recipe_Name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -127,10 +172,15 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       } else if (sortBy === "calories") {
         return sortOrder === "asc" ? a.Calories - b.Calories : b.Calories - a.Calories;
       } else if (sortBy === "rating") {
-        return sortOrder === "asc" ? a.Average_Rating - b.Average_Rating : b.Average_Rating - a.Average_Rating;
+        const ratingA = Number(a.Average_Rating) || 0;
+        const ratingB = Number(b.Average_Rating) || 0;
+        return sortOrder === "asc" ? ratingA - ratingB : ratingB - ratingA;
       }
       return 0;
     });
+    
+    
+    
 
   const handleRecipeClick = async (recipe: Recipe) => {
     // Check if recipe is already selected, if so, don't update
@@ -181,7 +231,7 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       }
 
       const data = await response.json();
-      const averageRating = data[0]?.Average_Rating;
+      const averageRating = data[0]?.Average_Rating ?? 0; 
       console.log("Average Rating:", averageRating);
 
       // Update the selected recipe with the fetched average rating
@@ -415,10 +465,13 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         {/* Sort By */}
         <label>Sort By:</label>
         <div className="d-flex">
-          <select
-            className="form-select me-2"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+        <select
+          className="form-select me-2"
+          value={sortBy}
+          onChange={(e) => {
+            setSortBy(e.target.value);
+            console.log("Sort By changed to:", e.target.value); // Debug log
+          }}
           >
             <option value="name">Name</option>
             <option value="calories">Calories</option>
@@ -427,7 +480,10 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
           <select
             className="form-select"
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
+            onChange={(e) => {
+              setSortOrder(e.target.value);
+              console.log("Sort Order changed to:", e.target.value); // Debug log
+            }}
           >
             <option value="asc">Ascending</option>
             <option value="desc">Descending</option>

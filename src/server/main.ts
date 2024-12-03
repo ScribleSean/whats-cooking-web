@@ -194,16 +194,30 @@ const constructRecipeUrl = (recipeName: string): string => {
 
 app.get('/recipes', async (req: Request, res: Response) => {
   try {
-    const query = `
+    
+    const recipeQuery = `
       SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings,
              i.Ingredient_Name, rc.Quantity, rc.Unit, r.Directions
       FROM Recipe r
       JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
       JOIN Ingredient i ON rc.Ingredient_ID = i.Ingredient_ID
     `;
-    
-    const [rows] = await pool.query<RowDataPacket[]>(query);
-    const recipes = rows.reduce((acc: any, row: any) => {
+
+    const ratingsQuery = `
+      SELECT r.Recipe_ID, COALESCE(AVG(rv.Rating), 0) AS Average_Rating
+      FROM Recipe r
+      LEFT JOIN User_Review rv ON r.Recipe_ID = rv.Recipe_ID
+      GROUP BY r.Recipe_ID
+    `;
+    const [recipeRows] = await pool.query<RowDataPacket[]>(recipeQuery);
+    const [ratingsRows] = await pool.query<RowDataPacket[]>(ratingsQuery);
+
+    const ratingsMap = ratingsRows.reduce((map, row) => {
+      map[row.Recipe_ID] = row.Average_Rating;
+      return map;
+    }, {} as { [key: number]: number });
+
+    const recipes = recipeRows.reduce((acc: any, row: any) => {
       const recipeId = row.Recipe_ID;
       if (!acc[recipeId]) {
         acc[recipeId] = {
@@ -215,7 +229,8 @@ app.get('/recipes', async (req: Request, res: Response) => {
           Servings: row.Servings,
           Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
           Ingredients: [],
-          Directions: row.Directions
+          Directions: row.Directions,
+          Average_Rating: ratingsMap[recipeId] || 0, 
         };
       }
       acc[recipeId].Ingredients.push({
