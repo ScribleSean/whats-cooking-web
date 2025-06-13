@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 
 interface LoginProps {
-  onLogin: (userData: { email: string }) => void;
+  onLogin: (userData: { email: string; token: string }) => void;
 }
 
 interface LoginResponse {
   success: boolean;
   message: string;
   user?: { email: string };
+  token?: string;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -38,7 +39,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       console.log("Received login response:", data);
       if (data.success) {
         console.log("Login successful, setting user email:", username);
-        onLogin({ email: username });
+        if (!data.token) {
+          setError("Login succeeded but no token was returned.");
+          return;
+        }
+        onLogin({ email: username, token: data.token });
       } else {
         setError(data.message || "Invalid username or password");
       }

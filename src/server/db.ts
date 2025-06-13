@@ -1,15 +1,28 @@
-import mysql from 'mysql2/promise';  
+import mysql from 'mysql2/promise';
+import 'dotenv/config';
 
+const {
+  DB_HOST,
+  DB_USER,
+  DB_PASSWORD,
+  DB_NAME,
+} = process.env;
+
+if (!DB_HOST || !DB_USER || !DB_PASSWORD || !DB_NAME) {
+  throw new Error(
+    'Missing DB env vars. Required: DB_HOST, DB_USER, DB_PASSWORD, DB_NAME (see .env.example)'
+  );
+}
 
 const pool = mysql.createPool({
-  host: '212.192.29.218',
-  user: 'dbms',
-  password: 'DBMS_group123',
-  database: 'CS542ProjectDB',
+  host: DB_HOST,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,  
-  queueLimit: 0,  
-  connectTimeout: 10000  
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 10000,
 });
 
 

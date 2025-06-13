@@ -17,10 +17,32 @@ import TopRecipes from "./toprecipes";
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("authToken"));
+  const [storedEmail, setStoredEmail] = useState<string>(() => localStorage.getItem("authEmail") || "");
 
-  const handleLogin = (userData: { email: string }) => {
+  const effectiveEmail = isLoggedIn ? userEmail : storedEmail;
+  const isAuthed = isLoggedIn || Boolean(token && storedEmail);
+
+  const handleLogin = (userData: { email: string; token: string }) => {
     setIsLoggedIn(true);
     setUserEmail(userData.email);
+    setStoredEmail(userData.email);
+    setToken(userData.token);
+    localStorage.setItem("authToken", userData.token);
+    localStorage.setItem("authEmail", userData.email);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/logout", { method: "POST" });
+    } finally {
+      setIsLoggedIn(false);
+      setUserEmail("");
+      setStoredEmail("");
+      setToken(null);
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("authEmail");
+    }
   };
 
   return (
@@ -35,7 +57,7 @@ const App: React.FC = () => {
           <Link className="navbar-nav text-warning mx-2" to="/recipebuilder">
             Recipe Builder
           </Link>
-          {isLoggedIn && (
+          {isAuthed && (
             <Link className="navbar-nav text-warning mx-2" to="/profile">
               Profile
             </Link>
@@ -45,13 +67,22 @@ const App: React.FC = () => {
           <Link className="navbar-nav text-warning mx-2" to="/toprecipes">
             Top 10 Recipes By Statistics
           </Link>
+          {isAuthed && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-light ms-auto me-2"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          )}
         </nav>
 
         <Routes>
           <Route
             path="/"
             element={
-              isLoggedIn ? (
+              isAuthed ? (
                 <Navigate to="/recipe" />
               ) : (
                 <Login onLogin={(userData) => handleLogin(userData)} />
@@ -61,15 +92,15 @@ const App: React.FC = () => {
           <Route
             path="/recipe"
             element={
-              isLoggedIn ? <RecipeApp email={userEmail} /> : <Navigate to="/" />
+              isAuthed ? <RecipeApp email={effectiveEmail} /> : <Navigate to="/" />
             }
           />
           <Route path="/register" element={<Register />} />
           <Route
             path="/recipebuilder"
             element={
-              isLoggedIn ? (
-                <RecipeBuilder email={userEmail} />
+              isAuthed ? (
+                <RecipeBuilder email={effectiveEmail} />
               ) : (
                 <Navigate to="/" />
               )
@@ -78,8 +109,8 @@ const App: React.FC = () => {
           <Route
             path="/toprecipes"
             element={
-              isLoggedIn ? (
-                <TopRecipes email = {userEmail}/>
+              isAuthed ? (
+                <TopRecipes email = {effectiveEmail}/>
               ) : (
                 <Navigate to="/" />
               )
@@ -88,8 +119,8 @@ const App: React.FC = () => {
           <Route
             path="/profile"
             element={
-              isLoggedIn ? (
-                <UserProfile email={userEmail} />
+              isAuthed ? (
+                <UserProfile email={effectiveEmail} />
               ) : (
                 <Login onLogin={(userData) => handleLogin(userData)} />
               )

@@ -5,6 +5,8 @@ import cors from 'cors';
 import pool from './db';
 import { fileURLToPath } from 'url';
 import path from "path";
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +16,34 @@ const app = express();
 app.use(cors())
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../dist')));
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+if (!JWT_SECRET) {
+  throw new Error('Missing JWT_SECRET (see .env.example)');
+}
+
+function signToken(email: string) {
+  return jwt.sign({ email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+
+function getBearerToken(req: Request): string | null {
+  const auth = req.header('authorization') || '';
+  const m = auth.match(/^Bearer (.+)$/i);
+  return m ? m[1] : null;
+}
+
+function requireAuth(req: Request, res: Response, next: () => void) {
+  const token = getBearerToken(req);
+  if (!token) return res.status(401).json({ error: 'Missing Authorization header' });
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    (req as any).user = payload;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
 
 interface DefaultIngredientName extends RowDataPacket {
   Ingredient_Name: string;
@@ -263,19 +293,33 @@ app.post('/login', async (req: Request, res: Response) => {
 			});
 		}
 		
-		let valid_password = false;
-		if (password == user[0].Password) valid_password = true;
-		if (!valid_password) {
+    const stored = String(user[0].Password ?? '');
+    let validPassword = false;
+    const looksHashed = stored.startsWith('$2a$') || stored.startsWith('$2b$') || stored.startsWith('$2y$');
+    if (looksHashed) {
+      validPassword = await bcrypt.compare(String(password ?? ''), stored);
+    } else {
+      // Backward compatible: accept plaintext once, then upgrade to bcrypt.
+      validPassword = String(password ?? '') === stored;
+      if (validPassword) {
+        const hash = await bcrypt.hash(String(password ?? ''), 12);
+        await pool.execute('UPDATE User SET Password = ? WHERE Email = ?', [hash, username]);
+      }
+    }
+
+		if (!validPassword) {
 			return res.json({
 				success: false,
 				message: 'Invalid password'
 			});
 		}
 
+    const token = signToken(username);
 		res.json({
 			success: true,
 			message: 'Login success',
-			user: username
+			user: { email: username },
+      token
 		});
 	} catch (error) {
 		console.log(error);
@@ -289,7 +333,8 @@ app.post('/login', async (req: Request, res: Response) => {
 app.post('/newuser', async (req: Request, res: Response) => {
 	try {
 		const { username, password } = req.body;
-    const [result] = await pool.execute('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, password]);
+    const hash = await bcrypt.hash(String(password ?? ''), 12);
+    const [result] = await pool.execute('INSERT INTO User (Email, Password) VALUES (?, ?)', [username, hash]);
     if (!result) {
       return res.json({
         success: false,
@@ -307,7 +352,7 @@ app.post('/newuser', async (req: Request, res: Response) => {
 		res.json({
 			success: true,
 			message: 'successfully created user in db',
-			user: username
+			user: { email: username }
 		});
 
 	} catch (error) {
@@ -317,6 +362,11 @@ app.post('/newuser', async (req: Request, res: Response) => {
 			message: 'error during login'
 		});
 	} 	
+});
+
+app.post('/logout', (req: Request, res: Response) => {
+  // Stateless JWT: client should delete token; this endpoint exists for API symmetry.
+  res.status(200).json({ success: true });
 });
 
 
@@ -404,7 +454,7 @@ app.post('/insert-recipe-content', async (req, res) => {
   }
 });
 // Save recipe
-app.post('/save-recipe', async (req: Request, res: Response) => {
+app.post('/save-recipe', requireAuth, async (req: Request, res: Response) => {
   const { email, recipeId } = req.body;
 
   console.log('Received request to save recipe:', { email, recipeId });
@@ -428,7 +478,7 @@ app.post('/save-recipe', async (req: Request, res: Response) => {
 });
 
 // Unsave recipe
-app.post('/unsave-recipe', async (req: Request, res: Response) => {
+app.post('/unsave-recipe', requireAuth, async (req: Request, res: Response) => {
   const { email, recipeId } = req.body;
 
   console.log('Received request to unsave recipe:', { email, recipeId });
@@ -452,7 +502,7 @@ app.post('/unsave-recipe', async (req: Request, res: Response) => {
 });
 
 // Leave a review
-app.post('/leave-review', async (req: Request, res: Response) => {
+app.post('/leave-review', requireAuth, async (req: Request, res: Response) => {
   const { email, recipeId, Rating, Comment } = req.body;
 
   console.log('Received request to leave review:', { email, recipeId, Rating, Comment });

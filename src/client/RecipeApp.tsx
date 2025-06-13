@@ -29,6 +29,7 @@ interface Recipe {
 }
 
 const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
+  const token = localStorage.getItem("authToken");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<number[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -75,9 +76,12 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
 
     const fetchSavedRecipeIDs = async () => {
       try {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (token) headers.Authorization = `Bearer ${token}`;
+
         const response = await fetch("/recipe-saved-ids-for-specific-user", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ email }),
         });
         if (!response.ok) {
@@ -237,7 +241,10 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         // Unsaving the recipe
         response = await fetch("/unsave-recipe", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ email, recipeId }),
         });
 
@@ -258,7 +265,10 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         // Saving the recipe
         response = await fetch("/save-recipe", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ email, recipeId }),
         });
 
@@ -289,7 +299,10 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
 
       const response = await fetch("/leave-review", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body), // JSON stringify here, since the body needs to be JSON
       });
 
