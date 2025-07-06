@@ -327,14 +327,21 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       const reviews = await reviewsResponse.json(); // Parse the reviews as JSON
       console.log("Fetched reviews:", reviews);
 
-      // Update the selected recipe with the fetched reviews
+      // Update both the list and the currently selected recipe immediately.
       setRecipes((prevRecipes) =>
-        prevRecipes.map((recipe) =>
-          recipe.Recipe_ID === recipeId
-            ? { ...recipe, Reviews: reviews }
-            : recipe
-        )
+        prevRecipes.map((r) => (r.Recipe_ID === recipeId ? { ...r, Reviews: reviews } : r))
       );
+      setSelectedRecipe((prev) =>
+        prev && prev.Recipe_ID === recipeId ? { ...prev, Reviews: reviews } : prev
+      );
+
+      // Refresh derived fields that depend on reviews.
+      if (selectedRecipe && selectedRecipe.Recipe_ID === recipeId) {
+        await handleGetRecipeRating(selectedRecipe);
+      }
+
+      // Reset the review form for the next entry.
+      setReview({ Rating: 0, Comment: "" });
 
       Swal.fire({
         title: "Review Submitted",
