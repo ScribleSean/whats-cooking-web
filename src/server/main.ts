@@ -513,12 +513,20 @@ app.post('/leave-review', requireAuth, async (req: Request, res: Response) => {
   }
 
   try {
-    await pool.query(`
+    // Enforce "one review per user per recipe" by updating in place.
+    // Requires a UNIQUE constraint on (Email, Recipe_ID).
+    await pool.query(
+      `
       INSERT INTO User_Review (Email, Recipe_ID, Rating, Comment)
       VALUES (?, ?, ?, ?)
-    `, [email, recipeId, Rating, Comment]);
+      ON DUPLICATE KEY UPDATE
+        Rating = VALUES(Rating),
+        Comment = VALUES(Comment)
+    `,
+      [email, recipeId, Rating, Comment]
+    );
 
-    res.status(200).send('Review submitted successfully');
+    res.status(200).send('Review saved successfully');
   } catch (err) {
     console.error('Error submitting review:', err);
     res.status(500).send('Failed to submit review');
