@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { RowDataPacket } from 'mysql2'
+import { RowDataPacket, ResultSetHeader } from 'mysql2'
 import ViteExpress from "vite-express";
 import cors from 'cors';
 import pool from './db';
@@ -376,80 +376,113 @@ app.get('*', (req: Request, res: Response) => {
 
 
 app.post('/insert-recipe', async (req, res) => {
-  const { data } = req.body;
+  const { data } = req.body as { data?: Record<string, unknown> };
 
-  if (!data) {
+  if (!data || typeof data !== 'object') {
     return res.status(400).send('Data is required');
   }
 
+  // Whitelist columns to avoid dynamic SQL column injection.
+  const allowedColumns = [
+    'Email',
+    'Recipe_Name',
+    'Prep_Time',
+    'Cook_Time',
+    'Additional_Time',
+    'Servings',
+    'Calories',
+    'Number_Of_Saves',
+    'Average_Rating',
+    'Directions',
+  ] as const;
 
-  // Construct dynamic SQL query
-  const columns = Object.keys(data).join(', ');
-  const placeholders = Object.values(data).map(() => '?').join(', ');
-  const values = Object.values(data);
+  for (const key of Object.keys(data)) {
+    if (!allowedColumns.includes(key as (typeof allowedColumns)[number])) {
+      return res.status(400).json({ error: `Unknown field: ${key}` });
+    }
+  }
 
-  const sql = `INSERT INTO Recipe (${columns}) VALUES (${placeholders})`;
+  const Email = data.Email;
+  const Recipe_Name = data.Recipe_Name;
 
-  //console.log(sql)
+  if (typeof Email !== 'string' || !Email.trim()) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  if (typeof Recipe_Name !== 'string' || !Recipe_Name.trim()) {
+    return res.status(400).json({ error: 'Recipe_Name is required' });
+  }
+
+  const sql = `
+    INSERT INTO Recipe (
+      Email, Recipe_Name, Prep_Time, Cook_Time, Additional_Time,
+      Servings, Calories, Number_Of_Saves, Average_Rating, Directions
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  const values = allowedColumns.map((col) => (data as any)[col]);
 
   try {
-    const result = await pool.execute(sql, values); 
-    res.status(200).json({ message: 'Data inserted successfully', result });
-  } catch (err) {
-    console.error('Error inserting data into Recipe:', err); // Log the error to the console
+    const [result] = await pool.execute<ResultSetHeader>(sql, values);
+    res.status(201).json({ message: 'Recipe inserted successfully', recipeId: result.insertId });
+  } catch (err: any) {
+    // Trigger SIGNAL errors often surface with sqlState 45000.
+    if (err?.sqlState === '45000') {
+      return res.status(409).json({ error: err?.message ?? 'Recipe name already exists for this user' });
+    }
+    if (err?.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Recipe name already exists for this user' });
+    }
+    console.error('Error inserting data into Recipe:', err);
     res.status(500).send('Error inserting data');
   }
 });
 
 app.post('/insert-recipe-content', async (req, res) => {
-  const { data } = req.body;
+  const { recipeId, data } = req.body as { recipeId?: number; data?: Record<string, unknown> };
 
-  if (!data) {
+  if (!recipeId || typeof recipeId !== 'number') {
+    return res.status(400).send('recipeId is required');
+  }
+
+  if (!data || typeof data !== 'object') {
     return res.status(400).send('Data is required');
   }
 
-  // Construct dynamic SQL query
+  const Ingredient_Name = data.Ingredient_Name;
+  const Quantity = data.Quantity;
+  const Unit = data.Unit;
 
-  
-  const query1 = `SELECT Recipe_ID FROM Recipe r
-                  ORDER BY Recipe_ID DESC
-                  LIMIT 1;`;
-  
-  const query2 = `SELECT Ingredient_ID FROM Ingredient i
-                  WHERE ? = i.Ingredient_Name`;
+  if (typeof Ingredient_Name !== 'string' || !Ingredient_Name.trim()) {
+    return res.status(400).json({ error: 'Ingredient_Name is required' });
+  }
+  if (typeof Quantity !== 'number' || Number.isNaN(Quantity)) {
+    return res.status(400).json({ error: 'Quantity is required' });
+  }
 
+  const [ingredientRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT Ingredient_ID FROM Ingredient WHERE Ingredient_Name = ? LIMIT 1`,
+    [Ingredient_Name]
+  );
 
-  const [rows1] = await pool.query<RowDataPacket[]>(query1);
-  const [rows2] = await pool.execute<RowDataPacket[]>(query2, [data.Ingredient_Name]);
+  if (!ingredientRows.length) {
+    return res.status(400).json({ error: `Unknown ingredient: ${Ingredient_Name}` });
+  }
 
-  const Recipe_ID = rows1[0].Recipe_ID;
-  const Ingredient_ID = rows2[0].Ingredient_ID;
-
-  delete data.Ingredient_Name;
-  
-  var columns = Object.keys(data).join(', ');
-  var placeholders = Object.values(data).map(() => '?').join(', ');
-  const values = Object.values(data);
-
-
-  columns = 'Recipe_ID, Ingredient_ID, ' + columns;
-  placeholders = '?, ?, ' + placeholders;
-  var extraValues = [Recipe_ID, Ingredient_ID];
-  extraValues.push(...values)
-
-  // console.log(extraValues)
-
-  const sql = `INSERT INTO Recipe_Content (${columns}) VALUES (${[placeholders]})`;
-
-  // console.log(sql)
-
-  // res.status(200).json({message: 'Test Queries ran.'})
+  const Ingredient_ID = ingredientRows[0].Ingredient_ID;
+  const normalizedUnit = Unit === 'None' ? null : Unit;
+  const sql = `INSERT INTO Recipe_Content (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES (?, ?, ?, ?)`;
 
   try {
-    const result = await pool.execute(sql, extraValues); 
-    res.status(200).json({ message: 'Data inserted successfully', result });
-  } catch (err) {
-    console.error('Error inserting data into Recipe_Content:', err); // Log the error to the console
+    const [result] = await pool.execute<ResultSetHeader>(sql, [
+      recipeId,
+      Ingredient_ID,
+      Quantity,
+      normalizedUnit,
+    ]);
+    res.status(201).json({ message: 'Recipe content inserted successfully', result });
+  } catch (err: any) {
+    console.error('Error inserting data into Recipe_Content:', err);
     res.status(500).send('Error inserting data');
   }
 });

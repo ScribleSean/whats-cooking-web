@@ -160,8 +160,18 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
       console.log(response);
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch data: ${response.statusText}`);
+        const errBody = await response.json().catch(() => null);
+        const msg =
+          (errBody && (errBody.error || errBody.message)) ||
+          `Failed to create recipe: ${response.statusText}`;
+        throw new Error(msg);
       } else {
+        const created = await response.json();
+        const recipeId = created?.recipeId;
+        if (!recipeId) {
+          throw new Error("Recipe created but no recipeId was returned.");
+        }
+
         for (let i = 0; i < recipeIngredients.length; i++) {
           console.log(recipeIngredients[i]);
           try {
@@ -171,6 +181,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
+                recipeId,
                 data: recipeIngredients[i],
               }),
             });
@@ -191,7 +202,10 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
       console.error(error);
       Swal.fire({
         title: "Try Again",
-        text: "Cannot create a recipe with an already existing name.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Cannot create this recipe. Please check your inputs and try again.",
         icon: "error",
         confirmButtonText: "OK",
       });
