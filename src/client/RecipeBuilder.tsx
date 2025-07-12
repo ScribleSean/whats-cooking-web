@@ -128,6 +128,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     if (
       name === "Prep_Time" ||
       name === "Cook_Time" ||
+      name === "Additional_Time" ||
       name === "Servings" ||
       name === "Calories"
     ) {
@@ -147,13 +148,52 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     console.log(recipeSubmit);
 
     try {
+      const trimmedName = String(recipeSubmit.Recipe_Name ?? "").trim();
+      const trimmedDirections = String(recipeSubmit.Directions ?? "").trim();
+
+      if (!trimmedName) {
+        throw new Error("Recipe name is required.");
+      }
+      if (recipeSubmit.Prep_Time < 0 || recipeSubmit.Cook_Time < 0 || recipeSubmit.Additional_Time < 0) {
+        throw new Error("Prep, cook, and additional time must be non-negative.");
+      }
+      if (recipeSubmit.Servings <= 0) {
+        throw new Error("Servings must be at least 1.");
+      }
+      if (recipeSubmit.Calories < 0) {
+        throw new Error("Calories must be non-negative.");
+      }
+      if (!trimmedDirections) {
+        throw new Error("Directions are required.");
+      }
+      if (recipeIngredients.length === 0) {
+        throw new Error("Please add at least one ingredient.");
+      }
+      for (const ing of recipeIngredients) {
+        if (!ing.Ingredient_Name || !ing.Ingredient_Name.trim()) {
+          throw new Error("Each ingredient must have a name.");
+        }
+        if (typeof ing.Quantity !== "number" || Number.isNaN(ing.Quantity) || ing.Quantity <= 0) {
+          throw new Error("Each ingredient quantity must be greater than 0.");
+        }
+        if (!ing.Unit) {
+          throw new Error("Each ingredient must have a unit (use 'None' if not applicable).");
+        }
+      }
+
+      const payload = {
+        ...recipeSubmit,
+        Recipe_Name: trimmedName,
+        Directions: trimmedDirections,
+      };
+
       const response = await fetch("/insert-recipe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          data: recipeSubmit,
+          data: payload,
         }),
       });
 

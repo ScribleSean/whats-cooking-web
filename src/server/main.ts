@@ -412,6 +412,36 @@ app.post('/insert-recipe', async (req, res) => {
     return res.status(400).json({ error: 'Recipe_Name is required' });
   }
 
+  const numericFieldNames = [
+    'Prep_Time',
+    'Cook_Time',
+    'Additional_Time',
+    'Servings',
+    'Calories',
+    'Number_Of_Saves',
+    'Average_Rating',
+  ] as const;
+
+  for (const field of numericFieldNames) {
+    const v = (data as any)[field];
+    if (typeof v !== 'number' || Number.isNaN(v)) {
+      return res.status(400).json({ error: `${field} must be a number` });
+    }
+  }
+
+  if ((data as any).Prep_Time < 0 || (data as any).Cook_Time < 0 || (data as any).Additional_Time < 0) {
+    return res.status(400).json({ error: 'Times must be non-negative' });
+  }
+  if ((data as any).Servings <= 0) {
+    return res.status(400).json({ error: 'Servings must be at least 1' });
+  }
+  if ((data as any).Calories < 0) {
+    return res.status(400).json({ error: 'Calories must be non-negative' });
+  }
+  if (typeof (data as any).Directions !== 'string' || !(data as any).Directions.trim()) {
+    return res.status(400).json({ error: 'Directions is required' });
+  }
+
   const sql = `
     INSERT INTO Recipe (
       Email, Recipe_Name, Prep_Time, Cook_Time, Additional_Time,
@@ -458,6 +488,12 @@ app.post('/insert-recipe-content', async (req, res) => {
   }
   if (typeof Quantity !== 'number' || Number.isNaN(Quantity)) {
     return res.status(400).json({ error: 'Quantity is required' });
+  }
+  if (Quantity <= 0) {
+    return res.status(400).json({ error: 'Quantity must be greater than 0' });
+  }
+  if (Unit == null || (typeof Unit !== 'string')) {
+    return res.status(400).json({ error: 'Unit is required' });
   }
 
   const [ingredientRows] = await pool.execute<RowDataPacket[]>(
