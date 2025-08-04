@@ -176,24 +176,6 @@ const getUnitNames = async (): Promise<UnitName[]> => {
 }
 };
 
-const getRecipeReviews = async (recipeId: number): Promise<RowDataPacket[]> => {
-  try {
-    const query = `
-      SELECT Email, Rating, Comment
-      FROM User_Review
-      WHERE Recipe_ID = ?
-    `;
-    // console.log(query)
-    const [rows] = await pool.query<RowDataPacket[]>(query, [recipeId]);
-    // console.log(rows);
-    return rows;
-  } catch (error) {
-    console.error('Error fetching recipe reviews:', error);
-    throw error;
-  }
-};
-
-
 app.get('/default-ingredients', async (req: Request, res: Response) => {
   try {
       const ingredientNames = await getIngredientNames();
@@ -738,14 +720,16 @@ app.post('/recipe-saved-ids-for-specific-user', async (req: Request, res: Respon
 app.get('/recipe-ratings', async (req: Request, res: Response) => {
   try {
     const query = `
-      SELECT Recipe_ID, Number_Of_Saves AS Saves
-      FROM Recipe
+      SELECT r.Recipe_ID, COALESCE(AVG(ur.Rating), 0) AS Average_Rating
+      FROM Recipe r
+      LEFT JOIN User_Review ur ON r.Recipe_ID = ur.Recipe_ID
+      GROUP BY r.Recipe_ID
     `;
     const [rows] = await pool.query<RowDataPacket[]>(query);
     res.status(200).json(rows);
   } catch (error) {
-    console.error('Error fetching recipe saves:', error);
-    res.status(500).json({ error: 'Failed to fetch recipe saves' });
+    console.error('Error fetching recipe ratings:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe ratings' });
   }
 });
 
@@ -819,54 +803,6 @@ app.post('/recipe-reviews-for-specific-recipe', async (req: Request, res: Respon
 });
 
 
-
-app.get('/recipes', async (req: Request, res: Response) => {
-  try {
-    const query = `
-      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings,
-             i.Ingredient_Name, rc.Quantity, rc.Unit, r.Directions
-      FROM Recipe r
-      JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
-      JOIN Ingredient i ON rc.Ingredient_ID = i.Ingredient_ID
-    `;
-    
-    const [rows] = await pool.query<RowDataPacket[]>(query);
-    const recipes = rows.reduce((acc: any, row: any) => {
-      const recipeId = row.Recipe_ID;
-      if (!acc[recipeId]) {
-        acc[recipeId] = {
-          Recipe_ID: recipeId,
-          Recipe_Name: row.Recipe_Name,
-          Prep_Time: row.Prep_Time,
-          Cook_Time: row.Cook_Time,
-          Calories: row.Calories,
-          Servings: row.Servings,
-          Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
-          Ingredients: [],
-          Directions: row.Directions,
-          Reviews: []
-        };
-      }
-      acc[recipeId].Ingredients.push({
-        Ingredient_Name: row.Ingredient_Name,
-        Quantity: row.Quantity,
-        Unit: row.Unit
-      });
-      return acc;
-    }, {});
-
-    // Fetch reviews for each recipe
-    for (const recipeId in recipes) {
-      const reviews = await getRecipeReviews(Number(recipeId));
-      recipes[recipeId].Reviews = reviews;
-    }
-
-    res.status(200).json(Object.values(recipes));
-  } catch (error) {
-    console.error('Error fetching recipes:', error);
-    res.status(500).json({ error: 'Failed to fetch recipes' });
-  }
-});
 
 app.delete('/delete-recipe', async (req: Request, res: Response) => {
   const { email, recipeId } = req.body;
