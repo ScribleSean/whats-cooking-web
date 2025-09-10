@@ -89,6 +89,7 @@ All routes are currently mounted at the server root (no `/api` prefix).
 - `GET /recipes`
 - `POST /insert-recipe`
 - `POST /insert-recipe-content`
+- `POST /ingredients`
 - `GET /default-ingredients`
 - `GET /units`
 
@@ -147,6 +148,18 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - Authentication hardening (hashed passwords, JWT/session expiry, logout)
 - Better validation and error states across the UI
 
+## Features
+
+- Custom ingredient creation: create new ingredients directly from the Recipe Builder
+
+## Bug fixes
+
+Recent improvements (post-report):
+
+- Review submissions refresh the selected recipe’s review list immediately
+- Enforced one review per user per recipe (API upsert + DB migration)
+- Recipe creation no longer uses “latest Recipe_ID” (concurrency-safe recipe builder inserts)
+- Added bcrypt password hashing + JWT auth with expiry and logout
 ## Contributors
 
 - Sean Arackal

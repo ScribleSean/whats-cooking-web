@@ -45,6 +45,41 @@ function requireAuth(req: Request, res: Response, next: () => void) {
   }
 }
 
+app.post('/ingredients', requireAuth, async (req: Request, res: Response) => {
+  const { name } = req.body as { name?: unknown };
+  const cleaned = typeof name === 'string' ? name.trim() : '';
+  if (!cleaned) return res.status(400).json({ error: 'name is required' });
+
+  try {
+    const [existing] = await pool.execute<RowDataPacket[]>(
+      `SELECT Ingredient_ID, Ingredient_Name FROM Ingredient WHERE Ingredient_Name = ? LIMIT 1`,
+      [cleaned]
+    );
+    if (existing.length) {
+      return res.status(200).json({ Ingredient_ID: existing[0].Ingredient_ID, Ingredient_Name: existing[0].Ingredient_Name });
+    }
+
+    const [result] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO Ingredient (Ingredient_Name) VALUES (?)`,
+      [cleaned]
+    );
+    return res.status(201).json({ Ingredient_ID: result.insertId, Ingredient_Name: cleaned });
+  } catch (err: any) {
+    if (err?.code === 'ER_DUP_ENTRY') {
+      const [existing] = await pool.execute<RowDataPacket[]>(
+        `SELECT Ingredient_ID, Ingredient_Name FROM Ingredient WHERE Ingredient_Name = ? LIMIT 1`,
+        [cleaned]
+      );
+      if (existing.length) {
+        return res.status(200).json({ Ingredient_ID: existing[0].Ingredient_ID, Ingredient_Name: existing[0].Ingredient_Name });
+      }
+      return res.status(409).json({ error: 'Ingredient already exists' });
+    }
+    console.error('Error creating ingredient:', err);
+    return res.status(500).json({ error: 'Failed to create ingredient' });
+  }
+});
+
 interface DefaultIngredientName extends RowDataPacket {
   Ingredient_Name: string;
 }

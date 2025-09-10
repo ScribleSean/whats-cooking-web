@@ -24,6 +24,7 @@ interface RecipeSubmission {
 }
 
 const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
+  const token = localStorage.getItem("authToken");
   const [recipeIngredients, setRecipeIngredients] = useState<
     RecipeIngredient[]
   >([]);
@@ -116,6 +117,54 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
       [field]: value,
     };
     setRecipeIngredients(updatedIngredients);
+  };
+
+  const handleCreateIngredient = async (rowIndex: number) => {
+    const result = await Swal.fire({
+      title: "Create ingredient",
+      input: "text",
+      inputLabel: "Ingredient name",
+      inputPlaceholder: "e.g. Smoked paprika",
+      showCancelButton: true,
+      inputValidator: (value) => {
+        if (!value || !value.trim()) return "Ingredient name is required";
+        return null;
+      },
+    });
+
+    if (!result.isConfirmed) return;
+    const name = String(result.value).trim();
+
+    try {
+      const res = await fetch("/ingredients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error((body && (body.error || body.message)) || "Failed to create ingredient");
+      }
+
+      const createdName: string = body?.Ingredient_Name || name;
+      setDefaultIngredients((prev) => {
+        if (prev.includes(createdName)) return prev;
+        return [...prev, createdName].sort((a, b) => a.localeCompare(b));
+      });
+
+      handleIngredientChange(rowIndex, "Ingredient_Name", createdName);
+      await Swal.fire({ title: "Created", text: `"${createdName}" is now available`, icon: "success" });
+    } catch (e) {
+      await Swal.fire({
+        title: "Error",
+        text: e instanceof Error ? e.message : "Failed to create ingredient",
+        icon: "error",
+      });
+    }
   };
 
   const handleChange = (
@@ -304,6 +353,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
             {recipeIngredients.map((ingredient, index) => (
               <div key={index} className="mb-3 border p-3 rounded">
                 <h5>Ingredient {index + 1}</h5>
+                <div className="d-flex gap-2 align-items-center mb-2">
                 <select
                   value={ingredient.Ingredient_Name}
                   onChange={(e) =>
@@ -313,7 +363,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
                       e.target.value
                     )
                   }
-                  className="form-control mb-2"
+                  className="form-control"
                 >
                   <option value="" disabled>
                     {" "}
@@ -325,6 +375,14 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => handleCreateIngredient(index)}
+                >
+                  Create
+                </button>
+                </div>
                 <input
                   type="number"
                   placeholder="Quantity"
