@@ -151,6 +151,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 ## Features
 
 - Custom ingredient creation: create new ingredients directly from the Recipe Builder
+- Public user profiles: browse `/users/:email` to see another user’s recipes, saves, and reviews
 
 ## Bug fixes
 

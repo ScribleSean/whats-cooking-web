@@ -4,6 +4,7 @@ import Login from "./login";
 import RecipeApp from "./RecipeApp";
 import Register from "./register";
 import UserProfile from "./UserProfile";
+import PublicProfile from "./PublicProfile";
 import {
   BrowserRouter as Router,
   Routes,
@@ -96,6 +97,7 @@ const App: React.FC = () => {
             }
           />
           <Route path="/register" element={<Register />} />
+          <Route path="/users/:email" element={<PublicProfile />} />
           <Route
             path="/recipebuilder"
             element={

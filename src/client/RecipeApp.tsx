@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Rating } from "@mui/material";
 import Swal from "sweetalert2";
+import { Link } from "react-router-dom";
 
 interface Ingredient {
   Ingredient_Name: string;
@@ -10,6 +11,7 @@ interface Ingredient {
 }
 
 interface Review {
+  Email?: string;
   Rating: number;
   Comment: string;
 }
@@ -541,7 +543,14 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                 <ul>
                   {(selectedRecipe.Reviews || []).map((review, index) => (
                     <li key={index}>
-                      {review.Comment} (Rating: {review.Rating})
+                      <div>
+                        {review.Email ? (
+                          <Link to={`/users/${encodeURIComponent(review.Email)}`}>{review.Email}</Link>
+                        ) : (
+                          <span>Anonymous</span>
+                        )}{" "}
+                        — {review.Comment} (Rating: {review.Rating})
+                      </div>
                     </li>
                   ))}
                 </ul>
