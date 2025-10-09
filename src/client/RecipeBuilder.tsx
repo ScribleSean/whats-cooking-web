@@ -30,6 +30,8 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
   >([]);
   const [defaultIngredients, setDefaultIngredients] = useState<string[]>([]);
   const [units, setUnits] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [recipeSubmit, setRecipeSubmit] = useState<RecipeSubmission>({
     Email: email,
     Recipe_Name: "",
@@ -85,6 +87,18 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     };
 
     fetchUnitNames();
+
+    const fetchTags = async () => {
+      try {
+        const response = await fetch("/tags");
+        if (!response.ok) throw new Error("Failed to fetch tags");
+        const data: { Tag_Name: string }[] = await response.json();
+        setAvailableTags((data || []).map((t) => t.Tag_Name));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchTags();
   }, []);
 
   useEffect(() => {
@@ -261,6 +275,22 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
           throw new Error("Recipe created but no recipeId was returned.");
         }
 
+        // Assign tags (optional).
+        if (selectedTags.length) {
+          const tagRes = await fetch("/recipe-tags", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ recipeId, tags: selectedTags }),
+          });
+          if (!tagRes.ok) {
+            const tagBody = await tagRes.json().catch(() => null);
+            throw new Error((tagBody && (tagBody.error || tagBody.message)) || "Failed to set tags");
+          }
+        }
+
         for (let i = 0; i < recipeIngredients.length; i++) {
           console.log(recipeIngredients[i]);
           try {
@@ -348,6 +378,26 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
             onChange={handleChange}
           ></input>
           <br></br>
+          <h4 className="mt-4">Dietary Tags</h4>
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            {availableTags.map((tag) => {
+              const selected = selectedTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`btn btn-sm ${selected ? "btn-primary" : "btn-outline-primary"}`}
+                  onClick={() =>
+                    setSelectedTags((prev) =>
+                      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                    )
+                  }
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
           <div className="col-md-6 offset-md-3">
             <h4>Ingredients</h4>
             {recipeIngredients.map((ingredient, index) => (

@@ -28,6 +28,7 @@ interface Recipe {
   Saves: number;
   Average_Rating: number;
   Reviews: Review[];
+  Tags?: string[];
 }
 
 const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
@@ -44,6 +45,8 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [ingredientQuery, setIngredientQuery] = useState<string>("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("name");
   const [sortOrder, setSortOrder] = useState<string>("asc");
 
@@ -99,6 +102,13 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
     const fetchData = async () => {
       await fetchRecipes();
       await fetchSavedRecipeIDs();
+      try {
+        const tagRes = await fetch("/tags");
+        if (tagRes.ok) {
+          const tags: { Tag_Name: string }[] = await tagRes.json();
+          setAvailableTags((tags || []).map((t) => t.Tag_Name));
+        }
+      } catch {}
       setLoading(false);
     };
 
@@ -124,7 +134,10 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
         selectedIngredients.every(ingredient =>
           recipe.Ingredients.some(i => i.Ingredient_Name.toLowerCase().includes(ingredient))
         );
-      return matchesSearch && matchesCalories && matchesRating && matchesIngredients;
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.every((t) => (recipe.Tags || []).includes(t));
+      return matchesSearch && matchesCalories && matchesRating && matchesIngredients && matchesTags;
     })
     .sort((a, b) => {
       if (sortBy === "name") {
@@ -436,6 +449,32 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
             ))}
           </div>
         </div>
+
+        {/* Tag Filter */}
+        {availableTags.length > 0 && (
+          <div className="mb-3">
+            <label>Filter by Tags:</label>
+            <div className="d-flex flex-wrap gap-2 mt-1">
+              {availableTags.map((tag) => {
+                const selected = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={`btn btn-sm ${selected ? "btn-primary" : "btn-outline-primary"}`}
+                    onClick={() =>
+                      setSelectedTags((prev) =>
+                        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                      )
+                    }
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
   
         {/* Sort By */}
         <label>Sort By:</label>
@@ -525,6 +564,11 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                 <p>
                   <strong>Number Of Saves:</strong> {selectedRecipe.Saves}
                 </p>
+                {selectedRecipe.Tags && selectedRecipe.Tags.length > 0 && (
+                  <p>
+                    <strong>Tags:</strong> {selectedRecipe.Tags.join(", ")}
+                  </p>
+                )}
                 <h4 className="mt-4">Ingredients:</h4>
                 <ul>
                   {selectedRecipe.Ingredients.map((ingredient, index) => (

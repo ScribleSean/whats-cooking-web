@@ -222,6 +222,64 @@ app.get('/default-ingredients', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/tags', async (req: Request, res: Response) => {
+  try {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT Tag_ID, Tag_Name FROM Recipe_Tag ORDER BY Tag_Name ASC`
+    );
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error('Error fetching tags:', err);
+    res.status(500).json({ error: 'Failed to fetch tags' });
+  }
+});
+
+app.post('/recipe-tags', requireAuth, async (req: Request, res: Response) => {
+  const { recipeId, tags } = req.body as { recipeId?: unknown; tags?: unknown };
+  if (typeof recipeId !== 'number') return res.status(400).json({ error: 'recipeId is required' });
+  if (!Array.isArray(tags)) return res.status(400).json({ error: 'tags must be an array of strings' });
+
+  const cleanedTags = tags
+    .map((t) => (typeof t === 'string' ? t.trim() : ''))
+    .filter((t) => t.length > 0);
+
+  try {
+    // Resolve tag IDs.
+    if (cleanedTags.length === 0) {
+      await pool.execute(`DELETE FROM Recipe_Tag_Map WHERE Recipe_ID = ?`, [recipeId]);
+      return res.status(200).json({ success: true, tags: [] });
+    }
+
+    const placeholders = cleanedTags.map(() => '?').join(', ');
+    const [tagRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT Tag_ID, Tag_Name FROM Recipe_Tag WHERE Tag_Name IN (${placeholders})`,
+      cleanedTags
+    );
+
+    const tagIdByName = new Map<string, number>(tagRows.map((r) => [r.Tag_Name, r.Tag_ID]));
+    const missing = cleanedTags.filter((t) => !tagIdByName.has(t));
+    if (missing.length) {
+      return res.status(400).json({ error: `Unknown tags: ${missing.join(', ')}` });
+    }
+
+    // Replace all tags for the recipe.
+    await pool.execute(`DELETE FROM Recipe_Tag_Map WHERE Recipe_ID = ?`, [recipeId]);
+    await Promise.all(
+      cleanedTags.map((t) =>
+        pool.execute(`INSERT INTO Recipe_Tag_Map (Recipe_ID, Tag_ID) VALUES (?, ?)`, [
+          recipeId,
+          tagIdByName.get(t)!,
+        ])
+      )
+    );
+
+    return res.status(200).json({ success: true, tags: cleanedTags });
+  } catch (err) {
+    console.error('Error updating recipe tags:', err);
+    res.status(500).json({ error: 'Failed to update recipe tags' });
+  }
+});
+
 app.get('/units', async (req: Request, res: Response) => {
   try {
       const unitNames = await getUnitNames();
@@ -259,6 +317,18 @@ app.get('/recipes', async (req: Request, res: Response) => {
     const [recipeRows] = await pool.query<RowDataPacket[]>(recipeQuery);
     const [ratingsRows] = await pool.query<RowDataPacket[]>(ratingsQuery);
 
+    const [tagRows] = await pool.query<RowDataPacket[]>(`
+      SELECT rtm.Recipe_ID, rt.Tag_Name
+      FROM Recipe_Tag_Map rtm
+      JOIN Recipe_Tag rt ON rtm.Tag_ID = rt.Tag_ID
+    `);
+    const tagsByRecipeId = tagRows.reduce((acc: Record<number, string[]>, row: any) => {
+      const id = row.Recipe_ID as number;
+      acc[id] = acc[id] || [];
+      acc[id].push(row.Tag_Name);
+      return acc;
+    }, {});
+
     const ratingsMap = ratingsRows.reduce((map, row) => {
       map[row.Recipe_ID] = row.Average_Rating;
       return map;
@@ -278,6 +348,7 @@ app.get('/recipes', async (req: Request, res: Response) => {
           Ingredients: [],
           Directions: row.Directions,
           Average_Rating: ratingsMap[recipeId] || 0, 
+          Tags: tagsByRecipeId[recipeId] || [],
         };
       }
       acc[recipeId].Ingredients.push({
