@@ -234,6 +234,61 @@ app.get('/tags', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/ingredient-search', async (req: Request, res: Response) => {
+  const { ingredients, mode } = req.body as { ingredients?: unknown; mode?: unknown };
+  if (!Array.isArray(ingredients)) {
+    return res.status(400).json({ error: 'ingredients must be an array of strings' });
+  }
+  const cleaned = ingredients
+    .map((x) => (typeof x === 'string' ? x.trim() : ''))
+    .filter((x) => x.length > 0);
+  if (cleaned.length === 0) return res.status(200).json({ recipeIds: [] });
+
+  const searchMode = mode === 'only' || mode === 'mostly' ? mode : 'mostly';
+
+  // Note: we match by exact Ingredient_Name. The UI uses the canonical ingredient list.
+  const placeholders = cleaned.map(() => '?').join(', ');
+
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `
+      SELECT
+        rc.Recipe_ID,
+        COUNT(DISTINCT rc.Ingredient_ID) AS total_count,
+        COUNT(DISTINCT CASE WHEN i.Ingredient_Name IN (${placeholders}) THEN rc.Ingredient_ID END) AS match_count
+      FROM Recipe_Content rc
+      JOIN Ingredient i ON rc.Ingredient_ID = i.Ingredient_ID
+      GROUP BY rc.Recipe_ID
+      HAVING match_count > 0
+      `,
+      cleaned
+    );
+
+    const scored = rows
+      .map((r: any) => {
+        const total = Number(r.total_count) || 0;
+        const match = Number(r.match_count) || 0;
+        const missing = Math.max(0, total - match);
+        const ratio = total === 0 ? 0 : match / total;
+        return { recipeId: r.Recipe_ID as number, total, match, missing, ratio };
+      })
+      .filter((r) => {
+        if (searchMode === 'only') return r.missing === 0;
+        // mostly: allow some extras, but ensure a meaningful match.
+        return r.ratio >= 0.6 && r.match >= 2;
+      })
+      .sort((a, b) => b.ratio - a.ratio || b.match - a.match);
+
+    res.status(200).json({
+      mode: searchMode,
+      recipeIds: scored.map((s) => s.recipeId),
+    });
+  } catch (err) {
+    console.error('Error searching recipes by ingredients:', err);
+    res.status(500).json({ error: 'Failed to search recipes' });
+  }
+});
+
 app.post('/recipe-tags', requireAuth, async (req: Request, res: Response) => {
   const { recipeId, tags } = req.body as { recipeId?: unknown; tags?: unknown };
   if (typeof recipeId !== 'number') return res.status(400).json({ error: 'recipeId is required' });

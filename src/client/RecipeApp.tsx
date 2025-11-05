@@ -47,6 +47,8 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [pantryMode, setPantryMode] = useState<"off" | "mostly" | "only">("off");
+  const [pantryRecipeIds, setPantryRecipeIds] = useState<number[] | null>(null);
   const [sortBy, setSortBy] = useState<string>("name");
   const [sortOrder, setSortOrder] = useState<string>("asc");
 
@@ -114,6 +116,33 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
 
     fetchData();
   }, [email]);
+
+  useEffect(() => {
+    const runPantrySearch = async () => {
+      if (pantryMode === "off") {
+        setPantryRecipeIds(null);
+        return;
+      }
+      if (selectedIngredients.length === 0) {
+        setPantryRecipeIds([]);
+        return;
+      }
+      try {
+        const res = await fetch("/ingredient-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ingredients: selectedIngredients, mode: pantryMode }),
+        });
+        if (!res.ok) throw new Error("Failed pantry search");
+        const body = await res.json();
+        setPantryRecipeIds(body?.recipeIds || []);
+      } catch (e) {
+        console.error(e);
+        setPantryRecipeIds([]);
+      }
+    };
+    runPantrySearch();
+  }, [pantryMode, selectedIngredients]);
    const handleAddIngredient = () => {
     if (ingredientQuery.trim() && !selectedIngredients.includes(ingredientQuery.trim().toLowerCase())) {
       setSelectedIngredients([...selectedIngredients, ingredientQuery.trim().toLowerCase()]);
@@ -137,7 +166,12 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
       const matchesTags =
         selectedTags.length === 0 ||
         selectedTags.every((t) => (recipe.Tags || []).includes(t));
-      return matchesSearch && matchesCalories && matchesRating && matchesIngredients && matchesTags;
+      const matchesPantry =
+        pantryMode === "off" || pantryRecipeIds == null
+          ? true
+          : pantryRecipeIds.includes(recipe.Recipe_ID);
+
+      return matchesSearch && matchesCalories && matchesRating && matchesIngredients && matchesTags && matchesPantry;
     })
     .sort((a, b) => {
       if (sortBy === "name") {
@@ -447,6 +481,28 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                 {ingredient} &times;
               </span>
             ))}
+          </div>
+        </div>
+
+        {/* Pantry search */}
+        <div className="mb-3">
+          <label>Pantry Search:</label>
+          <div className="d-flex gap-2 align-items-center mt-1">
+            <select
+              className="form-select"
+              value={pantryMode}
+              onChange={(e) => setPantryMode(e.target.value as any)}
+              style={{ maxWidth: 220 }}
+            >
+              <option value="off">Off</option>
+              <option value="mostly">Mostly these ingredients</option>
+              <option value="only">Only these ingredients</option>
+            </select>
+            {pantryMode !== "off" && pantryRecipeIds != null && (
+              <small className="text-muted">
+                Matches: {pantryRecipeIds.length}
+              </small>
+            )}
           </div>
         </div>
 
