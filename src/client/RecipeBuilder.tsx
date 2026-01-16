@@ -32,6 +32,7 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
   const [units, setUnits] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [recipeSubmit, setRecipeSubmit] = useState<RecipeSubmission>({
     Email: email,
     Recipe_Name: "",
@@ -275,6 +276,24 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
           throw new Error("Recipe created but no recipeId was returned.");
         }
 
+        // Upload image (optional).
+        if (imageFile) {
+          const form = new FormData();
+          form.append("recipeId", String(recipeId));
+          form.append("image", imageFile);
+          const imgRes = await fetch("/recipe-image", {
+            method: "POST",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: form,
+          });
+          if (!imgRes.ok) {
+            const imgBody = await imgRes.json().catch(() => null);
+            throw new Error((imgBody && (imgBody.error || imgBody.message)) || "Failed to upload image");
+          }
+        }
+
         // Assign tags (optional).
         if (selectedTags.length) {
           const tagRes = await fetch("/recipe-tags", {
@@ -489,6 +508,14 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
             onChange={handleChange}
           ></textarea>
           <br></br>
+
+          <h4 className="mt-4">Recipe Image (optional)</h4>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="form-control"
+            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+          />
 
           <button
             type="button"

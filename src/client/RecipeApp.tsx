@@ -29,6 +29,7 @@ interface Recipe {
   Average_Rating: number;
   Reviews: Review[];
   Tags?: string[];
+  Image_Path?: string | null;
 }
 
 const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
@@ -599,6 +600,13 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
             <div className="card" ref={selectedRecipeRef}>
               <div className="card-body">
                 <h2 className="card-title">{selectedRecipe.Recipe_Name}</h2>
+                {selectedRecipe.Image_Path && (
+                  <img
+                    src={selectedRecipe.Image_Path}
+                    alt={selectedRecipe.Recipe_Name}
+                    style={{ maxWidth: "100%", borderRadius: 8, marginBottom: 12 }}
+                  />
+                )}
                 <p>
                   <strong>Calories:</strong> {selectedRecipe.Calories}
                 </p>

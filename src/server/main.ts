@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 import path from "path";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import fs from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +18,7 @@ const app = express();
 app.use(cors())
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../dist')));
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -44,6 +47,53 @@ function requireAuth(req: Request, res: Response, next: () => void) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
+
+app.post('/recipe-image', requireAuth, upload.single('image'), async (req: Request, res: Response) => {
+  const { recipeId } = req.body as { recipeId?: unknown };
+  const userEmail = (req as any).user?.email as string | undefined;
+
+  if (typeof recipeId !== 'string' && typeof recipeId !== 'number') {
+    return res.status(400).json({ error: 'recipeId is required' });
+  }
+  const parsedRecipeId = Number(recipeId);
+  if (!Number.isFinite(parsedRecipeId)) return res.status(400).json({ error: 'recipeId must be a number' });
+  if (!req.file) return res.status(400).json({ error: 'image file is required' });
+  if (!userEmail) return res.status(401).json({ error: 'Unauthorized' });
+
+  const mime = req.file.mimetype || '';
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+    return res.status(400).json({ error: 'Unsupported image type (jpeg/png/webp only)' });
+  }
+
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT Email FROM Recipe WHERE Recipe_ID = ? LIMIT 1`,
+      [parsedRecipeId]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Recipe not found' });
+    if (rows[0].Email !== userEmail) return res.status(403).json({ error: 'You can only upload images for your own recipes' });
+
+    const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+    const fileName = `${parsedRecipeId}_${Date.now()}.${ext}`;
+    const dir = path.join(__dirname, '../../uploads/recipes');
+    await fs.mkdir(dir, { recursive: true });
+    const filePath = path.join(dir, fileName);
+    await fs.writeFile(filePath, req.file.buffer);
+
+    const publicPath = `/uploads/recipes/${fileName}`;
+    await pool.execute(`UPDATE Recipe SET Image_Path = ? WHERE Recipe_ID = ?`, [publicPath, parsedRecipeId]);
+
+    return res.status(200).json({ success: true, imagePath: publicPath });
+  } catch (err) {
+    console.error('Error uploading recipe image:', err);
+    return res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
 
 app.post('/ingredients', requireAuth, async (req: Request, res: Response) => {
   const { name } = req.body as { name?: unknown };
@@ -356,7 +406,7 @@ app.get('/recipes', async (req: Request, res: Response) => {
   try {
     
     const recipeQuery = `
-      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings,
+      SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings, r.Image_Path,
              i.Ingredient_Name, rc.Quantity, rc.Unit, r.Directions
       FROM Recipe r
       JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
@@ -399,6 +449,7 @@ app.get('/recipes', async (req: Request, res: Response) => {
           Cook_Time: row.Cook_Time,
           Calories: row.Calories,
           Servings: row.Servings,
+          Image_Path: row.Image_Path,
           Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
           Ingredients: [],
           Directions: row.Directions,

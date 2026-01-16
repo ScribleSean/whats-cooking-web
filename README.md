@@ -89,6 +89,7 @@ All routes are currently mounted at the server root (no `/api` prefix).
 - `GET /recipes`
 - `POST /insert-recipe`
 - `POST /insert-recipe-content`
+- `POST /recipe-image`
 - `POST /ingredients`
 - `POST /ingredient-search`
 - `GET /tags`
@@ -157,6 +158,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - Public user profiles: browse `/users/:email` to see another user’s recipes, saves, and reviews
 - Recipe tags / dietary labels: tag recipes and filter the main recipe list by selected tags
 - Ingredient-based recipe search: “pantry search” mode for recipes that use only/mostly your ingredients
+- Recipe image upload: attach an image to your recipe and display it on the recipe page
 
 ## Bug fixes
 
