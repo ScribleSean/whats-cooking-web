@@ -563,6 +563,86 @@ app.post('/logout', (req: Request, res: Response) => {
   res.status(200).json({ success: true });
 });
 
+app.post('/follow', requireAuth, async (req: Request, res: Response) => {
+  const follower = (req as any).user?.email as string | undefined;
+  const { emailToFollow } = req.body as { emailToFollow?: unknown };
+  const followed = typeof emailToFollow === 'string' ? emailToFollow.trim() : '';
+
+  if (!follower) return res.status(401).json({ error: 'Unauthorized' });
+  if (!followed) return res.status(400).json({ error: 'emailToFollow is required' });
+  if (followed === follower) return res.status(400).json({ error: 'You cannot follow yourself' });
+
+  try {
+    await pool.execute(
+      `INSERT IGNORE INTO User_Follow (Follower_Email, Followed_Email) VALUES (?, ?)`,
+      [follower, followed]
+    );
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error following user:', err);
+    res.status(500).json({ error: 'Failed to follow user' });
+  }
+});
+
+app.post('/unfollow', requireAuth, async (req: Request, res: Response) => {
+  const follower = (req as any).user?.email as string | undefined;
+  const { emailToUnfollow } = req.body as { emailToUnfollow?: unknown };
+  const followed = typeof emailToUnfollow === 'string' ? emailToUnfollow.trim() : '';
+
+  if (!follower) return res.status(401).json({ error: 'Unauthorized' });
+  if (!followed) return res.status(400).json({ error: 'emailToUnfollow is required' });
+
+  try {
+    await pool.execute(
+      `DELETE FROM User_Follow WHERE Follower_Email = ? AND Followed_Email = ?`,
+      [follower, followed]
+    );
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error unfollowing user:', err);
+    res.status(500).json({ error: 'Failed to unfollow user' });
+  }
+});
+
+app.get('/following', requireAuth, async (req: Request, res: Response) => {
+  const follower = (req as any).user?.email as string | undefined;
+  if (!follower) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT Followed_Email FROM User_Follow WHERE Follower_Email = ? ORDER BY Created_At DESC`,
+      [follower]
+    );
+    res.status(200).json(rows.map((r) => r.Followed_Email));
+  } catch (err) {
+    console.error('Error fetching following list:', err);
+    res.status(500).json({ error: 'Failed to fetch following list' });
+  }
+});
+
+app.get('/feed', requireAuth, async (req: Request, res: Response) => {
+  const follower = (req as any).user?.email as string | undefined;
+  if (!follower) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `
+      SELECT r.Recipe_ID, r.Recipe_Name, r.Calories, r.Image_Path, r.Email
+      FROM Recipe r
+      JOIN User_Follow uf ON uf.Followed_Email = r.Email
+      WHERE uf.Follower_Email = ?
+      ORDER BY r.Recipe_ID DESC
+      LIMIT 100
+      `,
+      [follower]
+    );
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error('Error fetching feed:', err);
+    res.status(500).json({ error: 'Failed to fetch feed' });
+  }
+});
+
 
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));

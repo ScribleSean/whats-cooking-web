@@ -83,6 +83,11 @@ All routes are currently mounted at the server root (no `/api` prefix).
 
 - `POST /login`
 - `POST /newuser`
+- `POST /logout`
+- `POST /follow`
+- `POST /unfollow`
+- `GET /following`
+- `GET /feed`
 
 ### Recipes / Ingredients
 
@@ -159,6 +164,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - Recipe tags / dietary labels: tag recipes and filter the main recipe list by selected tags
 - Ingredient-based recipe search: “pantry search” mode for recipes that use only/mostly your ingredients
 - Recipe image upload: attach an image to your recipe and display it on the recipe page
+- Social following: follow users and browse a personalized feed of their latest recipes
 
 ## Bug fixes
 

@@ -16,10 +16,13 @@ interface Recipe {
 
 const PublicProfile: React.FC = () => {
   const { email } = useParams();
+  const token = localStorage.getItem("authToken");
+  const myEmail = localStorage.getItem("authEmail") || "";
   const [createdRecipes, setCreatedRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
 
   useEffect(() => {
     if (!email) return;
@@ -57,6 +60,16 @@ const PublicProfile: React.FC = () => {
         setCreatedRecipes(created || []);
         setSavedRecipes(saved || []);
         setUserReviews(reviews || []);
+
+        if (token) {
+          const followingRes = await fetch("/following", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (followingRes.ok) {
+            const following: string[] = await followingRes.json();
+            setIsFollowing(following.includes(email));
+          }
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load profile");
       }
@@ -68,10 +81,42 @@ const PublicProfile: React.FC = () => {
   if (!email) return <div className="container mt-4">Missing user email.</div>;
   if (error) return <div className="container mt-4">Error: {error}</div>;
 
+  const canFollow = Boolean(token) && myEmail && myEmail !== email;
+  const toggleFollow = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(isFollowing ? "/unfollow" : "/follow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(
+          isFollowing ? { emailToUnfollow: email } : { emailToFollow: email }
+        ),
+      });
+      if (!res.ok) throw new Error("Failed to update follow state");
+      setIsFollowing(!isFollowing);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update follow state");
+    }
+  };
+
   return (
     <div className="container mt-4">
       <h1 className="text-center mb-1">Public Profile</h1>
-      <p className="text-center text-muted">{email}</p>
+      <div className="d-flex flex-column align-items-center">
+        <p className="text-center text-muted mb-2">{email}</p>
+        {canFollow && (
+          <button
+            type="button"
+            className={`btn btn-sm ${isFollowing ? "btn-outline-danger" : "btn-primary"}`}
+            onClick={toggleFollow}
+          >
+            {isFollowing ? "Unfollow" : "Follow"}
+          </button>
+        )}
+      </div>
 
       <div className="row g-3">
         <div className="col-md-4">

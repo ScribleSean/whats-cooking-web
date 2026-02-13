@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Rating } from "@mui/material";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 interface Ingredient {
   Ingredient_Name: string;
@@ -34,6 +35,7 @@ interface Recipe {
 
 const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
   const token = localStorage.getItem("authToken");
+  const [searchParams] = useSearchParams();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<number[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -117,6 +119,17 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
 
     fetchData();
   }, [email]);
+
+  // If navigated here with ?recipeId=, auto-select that recipe once data is loaded.
+  useEffect(() => {
+    const qp = searchParams.get("recipeId");
+    if (!qp) return;
+    const id = Number(qp);
+    if (!Number.isFinite(id)) return;
+    const recipe = recipes.find((r) => r.Recipe_ID === id);
+    if (recipe) handleRecipeClick(recipe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipes, searchParams]);
 
   useEffect(() => {
     const runPantrySearch = async () => {
