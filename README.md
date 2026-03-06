@@ -88,6 +88,7 @@ All routes are currently mounted at the server root (no `/api` prefix).
 - `POST /unfollow`
 - `GET /following`
 - `GET /feed`
+- `GET /suggestions`
 
 ### Recipes / Ingredients
 
@@ -165,6 +166,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - Ingredient-based recipe search: “pantry search” mode for recipes that use only/mostly your ingredients
 - Recipe image upload: attach an image to your recipe and display it on the recipe page
 - Social following: follow users and browse a personalized feed of their latest recipes
+- AI recipe suggestions: recommends recipes based on ingredient overlap with your saves and high ratings
 
 ## Bug fixes
 

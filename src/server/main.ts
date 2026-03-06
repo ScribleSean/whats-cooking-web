@@ -643,6 +643,72 @@ app.get('/feed', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+app.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
+  const email = (req as any).user?.email as string | undefined;
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    // 1) Seed set: saved recipes + positively reviewed recipes (rating >= 4).
+    const [seedRows] = await pool.execute<RowDataPacket[]>(
+      `
+      SELECT DISTINCT Recipe_ID FROM (
+        SELECT Recipe_ID FROM User_Saved_Recipe WHERE Email = ?
+        UNION ALL
+        SELECT Recipe_ID FROM User_Review WHERE Email = ? AND Rating >= 4
+      ) x
+      `,
+      [email, email]
+    );
+
+    const seedRecipeIds = seedRows.map((r) => r.Recipe_ID) as number[];
+    if (seedRecipeIds.length === 0) return res.status(200).json({ recipes: [] });
+
+    const seedPlaceholders = seedRecipeIds.map(() => '?').join(', ');
+
+    // 2) Get seed ingredient IDs.
+    const [seedIngRows] = await pool.execute<RowDataPacket[]>(
+      `
+      SELECT DISTINCT Ingredient_ID
+      FROM Recipe_Content
+      WHERE Recipe_ID IN (${seedPlaceholders})
+      `,
+      seedRecipeIds
+    );
+    const seedIngredientIds = seedIngRows.map((r) => r.Ingredient_ID) as number[];
+    if (seedIngredientIds.length === 0) return res.status(200).json({ recipes: [] });
+
+    const ingPlaceholders = seedIngredientIds.map(() => '?').join(', ');
+
+    // 3) Score candidate recipes by ingredient overlap, excluding already-saved.
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `
+      SELECT
+        r.Recipe_ID,
+        r.Recipe_Name,
+        r.Calories,
+        r.Image_Path,
+        COALESCE(AVG(ur.Rating), 0) AS Average_Rating,
+        COUNT(DISTINCT rc.Ingredient_ID) AS overlap
+      FROM Recipe r
+      JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
+      LEFT JOIN User_Review ur ON r.Recipe_ID = ur.Recipe_ID
+      WHERE rc.Ingredient_ID IN (${ingPlaceholders})
+        AND r.Recipe_ID NOT IN (${seedPlaceholders})
+        AND r.Recipe_ID NOT IN (SELECT Recipe_ID FROM User_Saved_Recipe WHERE Email = ?)
+      GROUP BY r.Recipe_ID
+      ORDER BY overlap DESC, Average_Rating DESC
+      LIMIT 20
+      `,
+      [...seedIngredientIds, ...seedRecipeIds, email]
+    );
+
+    res.status(200).json({ recipes: rows });
+  } catch (err) {
+    console.error('Error generating suggestions:', err);
+    res.status(500).json({ error: 'Failed to generate suggestions' });
+  }
+});
+
 
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));
