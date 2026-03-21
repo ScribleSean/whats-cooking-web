@@ -18,6 +18,10 @@ interface RecipeSubmission {
   Additional_Time: number;
   Servings: number;
   Calories: number;
+  Protein_g?: number | null;
+  Fat_g?: number | null;
+  Carbs_g?: number | null;
+  Fiber_g?: number | null;
   Number_Of_Saves: number;
   Average_Rating: number;
   Directions: string;
@@ -41,6 +45,10 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
     Additional_Time: 0,
     Servings: 0,
     Calories: 0,
+    Protein_g: null,
+    Fat_g: null,
+    Carbs_g: null,
+    Fiber_g: null,
     Number_Of_Saves: 0,
     Average_Rating: 0,
     Directions: "",
@@ -194,9 +202,14 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
       name === "Cook_Time" ||
       name === "Additional_Time" ||
       name === "Servings" ||
-      name === "Calories"
+      name === "Calories" ||
+      name === "Protein_g" ||
+      name === "Fat_g" ||
+      name === "Carbs_g" ||
+      name === "Fiber_g"
     ) {
-      newValue = isNaN(Number(value)) ? value : Number(value);
+      if (value === "") newValue = null as any;
+      else newValue = isNaN(Number(value)) ? value : Number(value);
     }
 
     // Update the corresponding field in the recipeSubmit state
@@ -226,6 +239,13 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
       }
       if (recipeSubmit.Calories < 0) {
         throw new Error("Calories must be non-negative.");
+      }
+      const macroFields = ["Protein_g", "Fat_g", "Carbs_g", "Fiber_g"] as const;
+      for (const f of macroFields) {
+        const v = (recipeSubmit as any)[f];
+        if (v != null && (typeof v !== "number" || Number.isNaN(v) || v < 0)) {
+          throw new Error("Macros must be non-negative numbers (or left blank).");
+        }
       }
       if (!trimmedDirections) {
         throw new Error("Directions are required.");
@@ -396,6 +416,26 @@ const RecipeBuilder: React.FC<{ email: string }> = ({ email }) => {
             name="Calories"
             onChange={handleChange}
           ></input>
+          <br></br>
+          <h4 className="mt-4">Nutrition (optional)</h4>
+          <div className="row g-2">
+            <div className="col-md-3">
+              <label className="form-label">Protein (g)</label>
+              <input type="number" className="form-control" name="Protein_g" onChange={handleChange} />
+            </div>
+            <div className="col-md-3">
+              <label className="form-label">Fat (g)</label>
+              <input type="number" className="form-control" name="Fat_g" onChange={handleChange} />
+            </div>
+            <div className="col-md-3">
+              <label className="form-label">Carbs (g)</label>
+              <input type="number" className="form-control" name="Carbs_g" onChange={handleChange} />
+            </div>
+            <div className="col-md-3">
+              <label className="form-label">Fiber (g)</label>
+              <input type="number" className="form-control" name="Fiber_g" onChange={handleChange} />
+            </div>
+          </div>
           <br></br>
           <h4 className="mt-4">Dietary Tags</h4>
           <div className="d-flex flex-wrap gap-2 mb-3">

@@ -167,6 +167,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - Recipe image upload: attach an image to your recipe and display it on the recipe page
 - Social following: follow users and browse a personalized feed of their latest recipes
 - AI recipe suggestions: recommends recipes based on ingredient overlap with your saves and high ratings
+- Nutrition breakdown: optional protein/fat/carbs/fiber macros displayed alongside calories
 
 ## Bug fixes
 

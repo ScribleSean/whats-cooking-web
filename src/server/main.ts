@@ -407,6 +407,7 @@ app.get('/recipes', async (req: Request, res: Response) => {
     
     const recipeQuery = `
       SELECT r.Recipe_ID, r.Recipe_Name, r.Prep_Time, r.Cook_Time, r.Calories, r.Servings, r.Image_Path,
+             r.Protein_g, r.Fat_g, r.Carbs_g, r.Fiber_g,
              i.Ingredient_Name, rc.Quantity, rc.Unit, r.Directions
       FROM Recipe r
       JOIN Recipe_Content rc ON r.Recipe_ID = rc.Recipe_ID
@@ -450,6 +451,10 @@ app.get('/recipes', async (req: Request, res: Response) => {
           Calories: row.Calories,
           Servings: row.Servings,
           Image_Path: row.Image_Path,
+          Protein_g: row.Protein_g,
+          Fat_g: row.Fat_g,
+          Carbs_g: row.Carbs_g,
+          Fiber_g: row.Fiber_g,
           Recipe_Url: constructRecipeUrl(row.Recipe_Name), 
           Ingredients: [],
           Directions: row.Directions,

@@ -31,6 +31,10 @@ interface Recipe {
   Reviews: Review[];
   Tags?: string[];
   Image_Path?: string | null;
+  Protein_g?: number | null;
+  Fat_g?: number | null;
+  Carbs_g?: number | null;
+  Fiber_g?: number | null;
 }
 
 const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
@@ -622,6 +626,20 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                 )}
                 <p>
                   <strong>Calories:</strong> {selectedRecipe.Calories}
+                </p>
+                <p>
+                  <strong>Macros:</strong>{" "}
+                  {selectedRecipe.Protein_g != null ||
+                  selectedRecipe.Fat_g != null ||
+                  selectedRecipe.Carbs_g != null ||
+                  selectedRecipe.Fiber_g != null ? (
+                    <>
+                      Protein: {selectedRecipe.Protein_g ?? "N/A"}g, Fat: {selectedRecipe.Fat_g ?? "N/A"}g, Carbs:{" "}
+                      {selectedRecipe.Carbs_g ?? "N/A"}g, Fiber: {selectedRecipe.Fiber_g ?? "N/A"}g
+                    </>
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
                 <p>
                   <strong>Prep Time:</strong> {selectedRecipe.Prep_Time} mins
