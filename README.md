@@ -168,6 +168,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - Social following: follow users and browse a personalized feed of their latest recipes
 - AI recipe suggestions: recommends recipes based on ingredient overlap with your saves and high ratings
 - Nutrition breakdown: optional protein/fat/carbs/fiber macros displayed alongside calories
+- Shopping list export: generate a copyable ingredient list from any recipe page
 
 ## Bug fixes
 

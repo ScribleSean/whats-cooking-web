@@ -665,6 +665,37 @@ const RecipeApp: React.FC<{ email: string }> = ({ email }) => {
                   </p>
                 )}
                 <h4 className="mt-4">Ingredients:</h4>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm mb-2"
+                  onClick={async () => {
+                    if (!selectedRecipe) return;
+                    const lines = selectedRecipe.Ingredients.map((ing) => {
+                      const unit = ing.Unit === "None" ? "" : ing.Unit;
+                      return `${ing.Quantity} ${unit} ${ing.Ingredient_Name}`.replace(/\s+/g, " ").trim();
+                    });
+                    const text = [
+                      `${selectedRecipe.Recipe_Name} — Shopping List`,
+                      `Servings: ${selectedRecipe.Servings}`,
+                      "",
+                      ...lines,
+                    ].join("\n");
+                    await Swal.fire({
+                      title: "Shopping list",
+                      html: `<textarea id="shoppingList" class="swal2-textarea" style="height:220px;">${text}</textarea>`,
+                      showCancelButton: true,
+                      confirmButtonText: "Copy",
+                      preConfirm: async () => {
+                        const el = document.getElementById("shoppingList") as HTMLTextAreaElement | null;
+                        const value = el?.value ?? text;
+                        await navigator.clipboard.writeText(value);
+                        return true;
+                      },
+                    });
+                  }}
+                >
+                  Generate shopping list
+                </button>
                 <ul>
                   {selectedRecipe.Ingredients.map((ingredient, index) => (
                     <li key={index}>
