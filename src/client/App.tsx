@@ -7,6 +7,7 @@ import UserProfile from "./UserProfile";
 import PublicProfile from "./PublicProfile";
 import Feed from "./Feed";
 import Suggestions from "./Suggestions";
+import Admin from "./Admin";
 import {
   BrowserRouter as Router,
   Routes,
@@ -81,6 +82,11 @@ const App: React.FC = () => {
             </Link>
           )}
           {isAuthed && (
+            <Link className="navbar-nav text-warning mx-2" to="/admin">
+              Admin
+            </Link>
+          )}
+          {isAuthed && (
             <button
               type="button"
               className="btn btn-sm btn-outline-light ms-auto me-2"
@@ -112,6 +118,7 @@ const App: React.FC = () => {
           <Route path="/users/:email" element={<PublicProfile />} />
           <Route path="/feed" element={isAuthed ? <Feed /> : <Navigate to="/" />} />
           <Route path="/suggestions" element={isAuthed ? <Suggestions /> : <Navigate to="/" />} />
+          <Route path="/admin" element={isAuthed ? <Admin /> : <Navigate to="/" />} />
           <Route
             path="/recipebuilder"
             element={

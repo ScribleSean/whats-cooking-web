@@ -48,6 +48,18 @@ function requireAuth(req: Request, res: Response, next: () => void) {
   }
 }
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function requireAdmin(req: Request, res: Response, next: () => void) {
+  const email = (req as any).user?.email as string | undefined;
+  if (!email) return res.status(401).json({ error: 'Unauthorized' });
+  if (!ADMIN_EMAILS.includes(email)) return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -711,6 +723,79 @@ app.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error generating suggestions:', err);
     res.status(500).json({ error: 'Failed to generate suggestions' });
+  }
+});
+
+app.get('/admin/stats', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const [[userCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) AS c FROM User`);
+    const [[recipeCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) AS c FROM Recipe`);
+    const [mostReviewed] = await pool.query<RowDataPacket[]>(`
+      SELECT r.Recipe_ID, r.Recipe_Name, COUNT(*) AS Review_Count
+      FROM User_Review ur
+      JOIN Recipe r ON ur.Recipe_ID = r.Recipe_ID
+      GROUP BY r.Recipe_ID
+      ORDER BY Review_Count DESC
+      LIMIT 10
+    `);
+    const [users] = await pool.query<RowDataPacket[]>(`SELECT Email FROM User ORDER BY Email ASC LIMIT 50`);
+
+    res.status(200).json({
+      totalUsers: userCount.c,
+      totalRecipes: recipeCount.c,
+      mostReviewed,
+      users: users.map((u) => u.Email),
+    });
+  } catch (err) {
+    console.error('Error fetching admin stats:', err);
+    res.status(500).json({ error: 'Failed to fetch admin stats' });
+  }
+});
+
+app.delete('/admin/recipe/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid recipe id' });
+  try {
+    await pool.execute(`DELETE FROM Recipe_Tag_Map WHERE Recipe_ID = ?`, [id]);
+    await pool.execute(`DELETE FROM Recipe_Content WHERE Recipe_ID = ?`, [id]);
+    await pool.execute(`DELETE FROM User_Saved_Recipe WHERE Recipe_ID = ?`, [id]);
+    await pool.execute(`DELETE FROM User_Review WHERE Recipe_ID = ?`, [id]);
+    const [result] = await pool.execute<ResultSetHeader>(`DELETE FROM Recipe WHERE Recipe_ID = ?`, [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Recipe not found' });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error deleting recipe as admin:', err);
+    res.status(500).json({ error: 'Failed to delete recipe' });
+  }
+});
+
+app.delete('/admin/user/:email', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  const email = decodeURIComponent(req.params.email || '').trim();
+  if (!email) return res.status(400).json({ error: 'Invalid email' });
+  try {
+    // Remove follow edges.
+    await pool.execute(`DELETE FROM User_Follow WHERE Follower_Email = ? OR Followed_Email = ?`, [email, email]);
+    // Remove user interactions.
+    await pool.execute(`DELETE FROM User_Saved_Recipe WHERE Email = ?`, [email]);
+    await pool.execute(`DELETE FROM User_Review WHERE Email = ?`, [email]);
+
+    // Delete recipes owned by user (and associated rows).
+    const [recipeRows] = await pool.execute<RowDataPacket[]>(`SELECT Recipe_ID FROM Recipe WHERE Email = ?`, [email]);
+    for (const r of recipeRows) {
+      const id = r.Recipe_ID as number;
+      await pool.execute(`DELETE FROM Recipe_Tag_Map WHERE Recipe_ID = ?`, [id]);
+      await pool.execute(`DELETE FROM Recipe_Content WHERE Recipe_ID = ?`, [id]);
+      await pool.execute(`DELETE FROM User_Saved_Recipe WHERE Recipe_ID = ?`, [id]);
+      await pool.execute(`DELETE FROM User_Review WHERE Recipe_ID = ?`, [id]);
+      await pool.execute(`DELETE FROM Recipe WHERE Recipe_ID = ?`, [id]);
+    }
+
+    const [result] = await pool.execute<ResultSetHeader>(`DELETE FROM User WHERE Email = ?`, [email]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error deleting user as admin:', err);
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 

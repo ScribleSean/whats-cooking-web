@@ -89,6 +89,9 @@ All routes are currently mounted at the server root (no `/api` prefix).
 - `GET /following`
 - `GET /feed`
 - `GET /suggestions`
+- `GET /admin/stats`
+- `DELETE /admin/recipe/:id`
+- `DELETE /admin/user/:email`
 
 ### Recipes / Ingredients
 
@@ -169,6 +172,7 @@ From the report’s “Future Work” section (and audited in `BUGS.md`):
 - AI recipe suggestions: recommends recipes based on ingredient overlap with your saves and high ratings
 - Nutrition breakdown: optional protein/fat/carbs/fiber macros displayed alongside calories
 - Shopping list export: generate a copyable ingredient list from any recipe page
+- Admin dashboard: protected `/admin` view with user/recipe stats and moderation deletes
 
 ## Bug fixes
 
