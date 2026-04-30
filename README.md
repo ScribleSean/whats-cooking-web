@@ -58,14 +58,15 @@ npm install
 
 ### Configure environment
 
-This codebase currently contains DB connection configuration in `src/server/db.ts`. The intended setup is to use environment variables:
+Copy `.env.example` to `.env` and fill in values:
 
 - `DB_HOST`
 - `DB_USER`
 - `DB_PASSWORD`
 - `DB_NAME`
 - `PORT` (default: 3000)
-- `JWT_SECRET` (planned; see `BUGS.md`)
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN` (default: `7d`)
 
 ### Run dev server (client + API)
 
@@ -149,16 +150,12 @@ All screenshots are in `images/`.
 From the report’s “Future Work” section (and audited in `BUGS.md`):
 
 - Users cannot create new ingredients from the recipe builder (must pick from existing ingredient list)
-- Users can currently submit multiple reviews for the same recipe
-- Reviews may not immediately appear after submission without reselecting the recipe
-- Authentication is basic (no session expiry/logout yet)
+- Some database triggers shown in the report use `MAX(id)+1` patterns that can race under concurrency (see `BUGS.md`)
 
 ## Feature roadmap
 
 - Custom ingredient creation from the recipe builder
 - Public user profiles
-- One review per user per recipe (update-in-place)
-- Authentication hardening (hashed passwords, JWT/session expiry, logout)
 - Better validation and error states across the UI
 
 ## Features
