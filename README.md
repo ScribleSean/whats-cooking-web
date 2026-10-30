@@ -1,13 +1,6 @@
 # What's Cooking
 
-Community-driven recipe web application built for **CS 542 (Database Management Systems)** at WPI. Users can browse recipes scraped from AllRecipes, filter/sort by multiple criteria, save recipes, leave ratings + comments, and create their own recipes with a recipe builder.
-
-## Tech stack
-
-- ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=000000) + ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=ffffff) + ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=ffffff)
-- ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=ffffff) + ![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=ffffff)
-- ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=ffffff) (`mysql2/promise` connection pool)
-- Deployment (per report): **Caddy** (reverse proxy + HTTPS) + **pm2** (process manager)
+Community-driven recipe web application built by a team of 5 for a database management systems course (CS 542). Users can browse recipes scraped from AllRecipes, filter/sort by multiple criteria, save recipes, leave ratings + comments, and create their own recipes with a recipe builder.
 
 ## Architecture overview
 
@@ -39,7 +32,7 @@ From the project report (see `images/whats_cooking_report.pdf`):
 - **Triggers**
   - Prevent deleting “high quality” recipes (average rating \(> 4.0\))
   - Update derived attributes (`Average_Rating`, `Number_Of_Saves`) when reviews/saves change
-  - ID generation triggers (noted in `BUGS.md` as a concurrency hazard)
+  - ID generation triggers
 - **Indexes**
   - Composite index for `Recipe_Content(Recipe_ID, Ingredient_ID)` to speed up common joins
 
@@ -147,16 +140,8 @@ All screenshots are in `images/`.
 
 ## Known limitations
 
-From the report’s “Future Work” section (and audited in `BUGS.md`):
-
-- Users cannot create new ingredients from the recipe builder (must pick from existing ingredient list)
-- Some database triggers shown in the report use `MAX(id)+1` patterns that can race under concurrency (see `BUGS.md`)
-
-## Feature roadmap
-
-- Custom ingredient creation from the recipe builder
-- Public user profiles
-- Better validation and error states across the UI
+- Some database triggers shown in the report use `MAX(id)+1` patterns that can race under concurrent inserts.
+- Validation and error states are thin in parts of the UI.
 
 ## Features
 
@@ -179,15 +164,15 @@ Recent improvements (post-report):
 - Enforced one review per user per recipe (API upsert + DB migration)
 - Recipe creation no longer uses “latest Recipe_ID” (concurrency-safe recipe builder inserts)
 - Added bcrypt password hashing + JWT auth with expiry and logout
+
+## Contributing
+
+Issues and pull requests are welcome. Run `npm run dev` against a local MySQL database to test a change, and keep pull requests focused on one fix or feature.
+
 ## Contributors
 
-- Sean Arackal
-- Alexander Bell
-- Spencer Greene
-- Axel Luca
-- Jamie Ortiz
+Built by a team of 5: [@ScribleSean](https://github.com/ScribleSean), [@abell625](https://github.com/abell625), [@spencer-gre](https://github.com/spencer-gre), [@12axel](https://github.com/12axel) and [@jocordova7](https://github.com/jocordova7).
 
 ## License
 
-License is currently **unspecified** in this repository.
-
+No license has been chosen yet; all rights reserved by the contributors.
